@@ -1,0 +1,14 @@
+Metadata-Version: 1.2
+Name: lightcycler
+Version: 0.0.0
+Summary: A software for analyzing lightcycler data
+Home-page: UNKNOWN
+Author: E.C. Pellegrini
+Author-email: ericpellegrini76@gmail.com
+Maintainer: E.C. Pellegrini
+Maintainer-email: ericpellegrini76@gmail.com
+License: GPL 3
+Description: lightcycler is a software for analyzing qPCR data from lightcycler device. It works with 
+        the report file (pdf).
+Platform: Unix
+Platform: Windows
