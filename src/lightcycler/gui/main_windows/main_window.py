@@ -10,15 +10,20 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import lightcycler
 from lightcycler.__pkginfo__ import __version__
 from lightcycler.gui.widgets.logger_widget import QTextEditLogger
+from lightcycler.gui.widgets.dynamic_matrix_widget import DynamicMatrixWidget
+from lightcycler.gui.widgets.groups_widget import GroupsWidget
 from lightcycler.gui.widgets.rawdata_widget import RawDataWidget
 from lightcycler.kernel.models.rawdata_model import RawDataError, RawDataModel
 from lightcycler.kernel.utils.progress_bar import progress_bar
+
 
 class MainWindow(QtWidgets.QMainWindow):
     """This class implements the main window of the application.
     """
 
     raw_data_loaded = QtCore.pyqtSignal(QtCore.QAbstractTableModel)
+
+    build_dynamic_matrix = QtCore.pyqtSignal(QtCore.QAbstractTableModel)
 
     def __init__(self, parent=None):
         """Constructor.
@@ -36,6 +41,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.raw_data_loaded.connect(self._rawdata_widget.on_load_raw_data)
+        self.raw_data_loaded.connect(self._groups_widget.on_load_raw_data)
+        self.build_dynamic_matrix.connect(self._dynamic_matrix_widget.on_build_dynamic_matrix)
 
     def _build_layout(self):
         """Build the layout.
@@ -63,7 +70,6 @@ class MainWindow(QtWidgets.QMainWindow):
         file_action.triggered.connect(self.on_open_lightcycler_files)
         file_menu.addAction(file_action)
 
-
     def _build_widgets(self):
         """Build the widgets.
         """
@@ -71,10 +77,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self._main_frame = QtWidgets.QFrame(self)
 
         self._tabs = QtWidgets.QTabWidget()
-        
+
         self._rawdata_widget = RawDataWidget(self)
+        self._dynamic_matrix_widget = DynamicMatrixWidget(self)
+        self._groups_widget = GroupsWidget(self)
 
         self._tabs.addTab(self._rawdata_widget, 'Raw data')
+        self._tabs.addTab(self._dynamic_matrix_widget, 'Dynamic_matrix')
+        self._tabs.addTab(self._groups_widget, 'Groups')
 
         self._logger = QTextEditLogger(self)
         self._logger.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -151,3 +161,4 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.raw_data_loaded.emit(rawdata_model)
 
+        self.build_dynamic_matrix.emit(rawdata_model)
