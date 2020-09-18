@@ -77,6 +77,7 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
         self._means_and_errors_axes.set_xlabel('groups')
         self._means_and_errors_axes.set_ylabel('Means')
 
-        self._means_and_errors_axes.bar(self._means.columns, self._means.loc[gene], yerr=self._errors.loc[gene])
+        self._means_and_errors_axes.bar(
+            self._means.columns, self._means.loc[gene], yerr=self._errors.loc[gene], align='center', alpha=0.5, ecolor='black', capsize=10)
 
         self._means_and_errors_canvas.draw()
