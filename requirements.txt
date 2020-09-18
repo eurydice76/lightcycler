@@ -4,3 +4,6 @@ pandas
 PyQt5
 openpyxl
 tabula-py
+scipy
+scikit-posthocs
+xlrd
