@@ -1,6 +1,6 @@
 {
-    "python.pythonPath": "/home/trc/venvs/lightcycler/bin/python",
-    "python.venvPath": "/home/trc/venvs/lightcycler",
+    "python.pythonPath": "/home/pellegrini/venvs/lightcycler/bin/python3",
+    "python.venvPath": "/home/pellegrini/venvs/lightcycler",
     "python.globalModuleInstallation": true,
     "python.linting.enabled": true,
     "editor.formatOnSave": true,

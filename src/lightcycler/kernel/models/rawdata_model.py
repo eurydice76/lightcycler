@@ -115,41 +115,25 @@ class RawDataModel(QtCore.QAbstractTableModel):
             if np.isnan(cp_value):
                 return QtGui.QBrush(QtCore.Qt.red)
 
-    def export(self, filename):
+    def export(self, workbook):
         """Export the raw data to an excel spreadsheet.
 
         Args:
-            filename (str): the name of the output excel file
+            workbook (openpyxl.workbook.workbook.Workbook): the workbook
         """
-
-        workbook = openpyxl.Workbook()
-        # Remove the first empty sheet created by default
-        workbook.remove_sheet(workbook.get_sheet_by_name('Sheet'))
 
         workbook.create_sheet('raw data')
         worksheet = workbook.get_sheet_by_name('raw data')
 
         for i, v in enumerate(self._rawdata.columns):
-            worksheet.cell(row=1, column=i+1).value = v
+            worksheet.cell(row=1, column=i+2).value = v
 
         for i, v in enumerate(self._rawdata.index):
-            worksheet.cell(row=i+1, column=1).value = v
+            worksheet.cell(row=i+2, column=1).value = v
 
         for i in range(len(self._rawdata.index)):
             for j in range(len(self._rawdata.columns)):
                 worksheet.cell(row=i+2, column=j+2).value = self._rawdata.iloc[i, j]
-
-        basename, ext = os.path.splitext(filename)
-        if ext not in ['.xls', '.xlsx']:
-            filename = basename + '.xlsx'
-
-        try:
-            workbook.save(filename)
-        except PermissionError as error:
-            logging.error(str(error))
-            return
-
-        logging.info('Exported successfully raw data to {} file'.format(filename))
 
     def headerData(self, col, orientation, role):
         """Returns the header data for a given row/column, orientation and role
@@ -171,6 +155,16 @@ class RawDataModel(QtCore.QAbstractTableModel):
         """
 
         return self._rawdata
+
+    @rawdata.setter
+    def rawdata(self, rawdata):
+        """Setter for rawdata.
+
+        Args:
+            rawdata (pandas.DataFrame); the raw data
+        """
+
+        self._rawdata = rawdata
 
     def rowCount(self, parent=None):
         """Return the number of rows of the model for a given parent.

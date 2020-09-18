@@ -44,7 +44,7 @@ class GroupContentsListView(QtWidgets.QListView):
         source_model.dropMimeData(event.mimeData(), QtCore.Qt.CopyAction, 0, 0, QtCore.QModelIndex())
         dragged_items = [source_model.item(i, 0).text() for i in range(source_model.rowCount())]
 
-        self._samples_model.remove_items(dragged_items)
+        self._samples_model.remove_samples(dragged_items)
 
         # # Drop only those items which are not present in this widget
         current_items = [target_model.data(target_model.index(i), QtCore.Qt.DisplayRole) for i in range(target_model.rowCount())]
@@ -53,6 +53,29 @@ class GroupContentsListView(QtWidgets.QListView):
                 continue
 
             target_model.add_sample(name)
+
+    def keyPressEvent(self, event):
+        """Event handler for keyboard interaction.
+
+        Args:
+            event (PyQt5.QtGui.QKeyEvent): the keyboard event
+        """
+
+        if event.key() == QtCore.Qt.Key_Delete:
+
+            group_contents_model = self.model()
+            if group_contents_model is None:
+                return
+
+            selected_samples = [group_contents_model.data(index, QtCore.Qt.DisplayRole) for index in self.selectedIndexes()]
+
+            group_contents_model.remove_samples(selected_samples)
+            if group_contents_model.rowCount() > 0:
+                index = group_contents_model.index(group_contents_model.rowCount()-1)
+                self.setCurrentIndex(index)
+
+        else:
+            super(GroupContentsListView, self).keyPressEvent(event)
 
     def set_samples_model(self, samples_model):
         """Attach a samples model to the widget

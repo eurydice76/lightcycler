@@ -48,7 +48,7 @@ class SamplesModel(QtCore.QAbstractListModel):
         if index.isValid():
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEnabled
 
-    def remove_items(self, items):
+    def remove_samples(self, items):
         """
         """
 
@@ -66,6 +66,13 @@ class SamplesModel(QtCore.QAbstractListModel):
             self.beginRemoveRows(QtCore.QModelIndex(), idx, idx)
             del self._samples[idx]
             self.endRemoveRows()
+
+    def reset(self):
+        """Reset the model.
+        """
+
+        self._samples = copy.copy(self._samples_copy)
+        self.layoutChanged.emit()
 
     def rowCount(self, parent=None):
         """Returns the number of samples.        

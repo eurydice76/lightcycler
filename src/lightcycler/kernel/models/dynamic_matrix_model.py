@@ -21,6 +21,8 @@ class InvalidViewError(Exception):
 
 class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
+    propagate_means = QtCore.pyqtSignal(pd.DataFrame)
+
     def __init__(self, *args, **kwargs):
         """Constructor.
         """
@@ -32,15 +34,6 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         self._n_values = pd.DataFrame()
         self._means = pd.DataFrame()
         self._stds = pd.DataFrame()
-
-    def rowCount(self, parent=None):
-        """Return the number of rows of the model for a given parent.
-
-        Returns:
-            int: the number of rows
-        """
-
-        return len(self._n_values.index)
 
     def columnCount(self, parent=None):
         """Return the number of columns of the model for a given parent.
@@ -102,12 +95,51 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
             return str(self._dynamic_matrix.iloc[row, col])
 
-    def export(self, filename):
+    def export(self, workbook):
         """Export the raw data to an excel spreadsheet.
 
         Args:
-            filename (str): the name of the output excel file
+            workbook (openpyxl.workbook.workbook.Workbook): the workbook
         """
+
+        workbook.create_sheet('means')
+        worksheet = workbook.get_sheet_by_name('means')
+
+        for i, v in enumerate(self._means.columns):
+            worksheet.cell(row=1, column=i+2).value = v
+
+        for i, v in enumerate(self._means.index):
+            worksheet.cell(row=i+2, column=1).value = v
+
+        for i in range(len(self._means.index)):
+            for j in range(len(self._means.columns)):
+                worksheet.cell(row=i+2, column=j+2).value = self._means.iloc[i, j]
+
+        workbook.create_sheet('stds')
+        worksheet = workbook.get_sheet_by_name('stds')
+
+        for i, v in enumerate(self._stds.columns):
+            worksheet.cell(row=1, column=i+2).value = v
+
+        for i, v in enumerate(self._stds.index):
+            worksheet.cell(row=i+2, column=1).value = v
+
+        for i in range(len(self._stds.index)):
+            for j in range(len(self._stds.columns)):
+                worksheet.cell(row=i+2, column=j+2).value = self._stds.iloc[i, j]
+
+        workbook.create_sheet('n_values')
+        worksheet = workbook.get_sheet_by_name('n_values')
+
+        for i, v in enumerate(self._n_values.columns):
+            worksheet.cell(row=1, column=i+2).value = v
+
+        for i, v in enumerate(self._n_values.index):
+            worksheet.cell(row=i+2, column=1).value = v
+
+        for i in range(len(self._n_values.index)):
+            for j in range(len(self._n_values.columns)):
+                worksheet.cell(row=i+2, column=j+2).value = self._n_values.iloc[i, j]
 
     def headerData(self, idx, orientation, role):
         """Returns the header data for a given index, orientation and role.
@@ -123,6 +155,35 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
                 return self._n_values.columns[idx]
             else:
                 return self._n_values.index[idx]
+
+    @property
+    def means(self):
+        """Getter for the means of the dynamic matrix.
+
+        Returns:
+            pandas.DataFrame: the means
+        """
+
+        return self._means
+
+    @property
+    def n_values(self):
+        """Return the matrix which stores the number of samples per group.
+
+        Returns:
+            pandas.DataFrame: the matrix.
+        """
+
+        return self._n_values
+
+    def rowCount(self, parent=None):
+        """Return the number of rows of the model for a given parent.
+
+        Returns:
+            int: the number of rows
+        """
+
+        return len(self._n_values.index)
 
     def set_dynamic_matrix(self, rawdata_model):
         """Build the dynamic matrix from a rawdata model.
@@ -165,6 +226,8 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
+        self.propagate_means.emit(self._means)
+
     def set_view(self, view):
 
         if view not in range(3):
@@ -173,3 +236,13 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         self._view = view
 
         self.layoutChanged.emit()
+
+    @property
+    def stds(self):
+        """Return the standard deviation matrix.
+
+        Returns:
+            pandas.DataFrame: the matrix of standard deviations.
+        """
+
+        return self._stds

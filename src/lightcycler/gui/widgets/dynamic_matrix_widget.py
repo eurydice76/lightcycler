@@ -17,7 +17,6 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
         """Build the events related with the widget.
         """
 
-        self._export_pushbutton.clicked.connect(self.on_export_matrices)
         self._view_combobox.currentIndexChanged.connect(self.on_change_dynamic_matrix_view)
 
     def _build_layout(self):
@@ -36,8 +35,6 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
 
         main_layout.addWidget(self._dynamic_matrix_tableview)
 
-        main_layout.addWidget(self._export_pushbutton)
-
         self.setLayout(main_layout)
 
     def _build_widgets(self):
@@ -53,13 +50,34 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
         dynamic_matrix_model = DynamicMatrixModel()
         self._dynamic_matrix_tableview.setModel(dynamic_matrix_model)
 
-        self._export_pushbutton = QtWidgets.QPushButton('Export')
-
     def _init_ui(self):
 
         self._build_widgets()
         self._build_layout()
         self._build_events()
+
+    def export(self, workbook):
+        """Event handler which export the raw data to an excel spreadsheet.
+
+        Args:
+            workbook (openpyxl.workbook.workbook.Workbook): the workbook
+        """
+
+        model = self._dynamic_matrix_tableview.model()
+        if model is None:
+            logging.error('No data loaded yet')
+            return
+
+        model.export(workbook)
+
+    def model(self):
+        """Returns the underlying model.
+
+        Returns:
+            lightcycle.kernel.models.dynamic_matrix_model.DynamicMatrixModel: the model
+        """
+
+        return self._dynamic_matrix_tableview.model()
 
     def on_build_dynamic_matrix(self, rawdata_model):
         """Event handler which loads sent rawdata model to the widget tableview.
@@ -75,18 +93,3 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
             return
 
         self._dynamic_matrix_tableview.model().set_view(idx)
-
-    def on_export_matrices(self):
-        """Event handler which export the dynamic matrix to an excel spreadsheet.
-        """
-
-        model = self._dynamic_matrix_tableview.model()
-        if model is None:
-            logging.error('No data loaded yet')
-            return
-
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, caption='Export dynamic matrix as ...', filter="Excel files (*.xls *.xlsx)")
-        if not filename:
-            return
-
-        model.export(filename)
