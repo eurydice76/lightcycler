@@ -1,6 +1,0 @@
-matplotlib
-numpy
-pandas
-PyQt5
-openpyxl
-tabula-py
