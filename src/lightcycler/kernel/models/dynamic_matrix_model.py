@@ -31,6 +31,7 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
         self._view = 0
 
+        self._dynamic_matrix = pd.DataFrame()
         self._n_values = pd.DataFrame()
         self._means = pd.DataFrame()
         self._stds = pd.DataFrame()
@@ -94,6 +95,16 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         elif role == QtCore.Qt.ToolTipRole:
 
             return str(self._dynamic_matrix.iloc[row, col])
+
+    @property
+    def dynamic_matrix(self):
+        """Return the dynamic matrix.
+
+        Returns:
+            pandas.DataFrame: the dynamic matrix
+        """
+
+        return self._dynamic_matrix
 
     def export(self, workbook):
         """Export the raw data to an excel spreadsheet.
@@ -176,6 +187,21 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
         return self._n_values
 
+    def on_remove_value(self, sample, gene, index):
+        """Remove a value from the dynamic matrix for given sample, genes and index.
+
+        Args:
+            sample (str): the selected sample
+            gene (str): the selected gene
+            index (int): the index
+        """
+
+        self._means[sample].loc[gene] = round(np.mean(self._dynamic_matrix[sample].loc[gene]), 3)
+        self._stds[sample].loc[gene] = round(np.std(self._dynamic_matrix[sample].loc[gene]), 3)
+        self._n_values[sample].loc[gene] = len(self._dynamic_matrix[sample].loc[gene])
+
+        self.layoutChanged.emit()
+
     def rowCount(self, parent=None):
         """Return the number of rows of the model for a given parent.
 
@@ -209,6 +235,12 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
             sample = columns['Name']
             cp = columns['CP']
             self._dynamic_matrix.loc[gene, sample].append(cp)
+
+        self.update_matrices()
+
+    def update_matrices(self):
+        """Update the meand, stdevs and n matrices.
+        """
 
         self._n_values = pd.DataFrame(0, index=self._dynamic_matrix.index, columns=self._dynamic_matrix.columns)
         self._means = pd.DataFrame(np.nan, index=self._dynamic_matrix.index, columns=self._dynamic_matrix.columns)

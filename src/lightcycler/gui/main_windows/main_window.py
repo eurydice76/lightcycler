@@ -51,7 +51,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.raw_data_loaded.connect(self._rawdata_widget.on_load_raw_data)
         self.raw_data_loaded.connect(self._groups_widget.on_load_raw_data)
         self.build_dynamic_matrix.connect(self._dynamic_matrix_widget.on_build_dynamic_matrix)
-        self._export_pushbutton.clicked.connect(self.on_export_data)
 
         dynamic_matrix_model = self._dynamic_matrix_widget.model()
         groups_model = self._groups_widget.model()
@@ -67,8 +66,6 @@ class MainWindow(QtWidgets.QMainWindow):
         main_layout = QtWidgets.QVBoxLayout()
 
         main_layout.addWidget(self._tabs, stretch=2)
-
-        main_layout.addWidget(self._export_pushbutton)
 
         main_layout.addWidget(self._logger.widget, stretch=1)
 
@@ -88,11 +85,19 @@ class MainWindow(QtWidgets.QMainWindow):
         file_action.triggered.connect(self.on_open_lightcycler_files)
         file_menu.addAction(file_action)
 
-        import_action = QtWidgets.QAction('&Import Excel spreasheet', self)
-        import_action.setShortcut('Ctrl+U')
-        import_action.setStatusTip('Import Excel spreadsheet which contains the raw data and the dynmaic matrix')
+        file_menu.addSeparator()
+
+        import_action = QtWidgets.QAction('&Import', self)
+        import_action.setShortcut('Ctrl+I')
+        import_action.setStatusTip('Import Excel spreadsheet')
         import_action.triggered.connect(self.on_import_excel_spreadsheet)
         file_menu.addAction(import_action)
+
+        export_action = QtWidgets.QAction('&Export', self)
+        export_action.setShortcut('Ctrl+E')
+        export_action.setStatusTip('Export data to an Excel spreadsheet')
+        export_action.triggered.connect(self.on_export_data)
+        file_menu.addAction(export_action)
 
         file_menu.addSeparator()
 
@@ -117,8 +122,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._tabs.addTab(self._rawdata_widget, 'Raw data')
         self._tabs.addTab(self._dynamic_matrix_widget, 'Dynamic_matrix')
         self._tabs.addTab(self._groups_widget, 'Groups')
-
-        self._export_pushbutton = QtWidgets.QPushButton('Export')
 
         self._logger = QTextEditLogger(self)
         self._logger.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -154,6 +157,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self._build_menu()
 
         self._build_events()
+
+    @property
+    def dynamic_matrix_widget(self):
+        """Returns the dynamic matrix widget.
+
+        Returns:
+            lightcycler.gui.widgets.dynamic_matrix_widget.DynamicMatrixWidget: the widget
+        """
+
+        return self._dynamic_matrix_widget
 
     def on_export_data(self):
         """Event handler which export the raw data to an excel spreadsheet.
@@ -265,3 +278,13 @@ class MainWindow(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, 'Quit', "Do you really want to quit?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
             sys.exit()
+
+    @property
+    def rawdata_widget(self):
+        """Returns the rawdata widget.
+
+        Returns:
+            lightcycler.gui.widgets.rawdata_widget.RawDataWidget: the widget
+        """
+
+        return self._rawdata_widget

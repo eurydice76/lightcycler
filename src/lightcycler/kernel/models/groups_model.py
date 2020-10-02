@@ -123,8 +123,11 @@ class GroupsModel(QtCore.QAbstractListModel):
                 for sample in model.samples:
                     values.append(self._means.loc[gene, sample])
 
-                mean = np.nanmean(values)
-                std = np.nanstd(values)
+                if values:
+                    mean = np.nanmean(values)
+                    std = np.nanstd(values)
+                else:
+                    mean = std = np.nan
 
                 means.loc[gene, group] = mean
                 errors.loc[gene, group] = std

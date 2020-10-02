@@ -4,6 +4,7 @@ import logging
 from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.gui.dialogs.means_and_errors_dialog import MeansAndErrorsDialog
+from lightcycler.gui.dialogs.group_contents_dialog import GroupContentsDialog
 from lightcycler.gui.views.group_contents_listview import GroupContentsListView
 from lightcycler.gui.views.groups_listview import GroupsListView
 from lightcycler.kernel.models.groups_model import GroupsModel
@@ -13,9 +14,11 @@ from lightcycler.kernel.models.samples_model import SamplesModel
 
 class GroupsWidget(QtWidgets.QWidget):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, main_window, *args, **kwargs):
 
-        super(GroupsWidget, self).__init__(*args, **kwargs)
+        super(GroupsWidget, self).__init__(main_window, *args, **kwargs)
+
+        self._main_window = main_window
 
         self._init_ui()
 
@@ -30,6 +33,7 @@ class GroupsWidget(QtWidgets.QWidget):
         self._reset_groups_pushbutton.clicked.connect(self.on_reset_groups)
         self._run_ttest_pushbutton.clicked.connect(self.on_run_student_test)
         self._selected_gene_combobox.currentTextChanged.connect(self.on_select_gene)
+        self._groups_listview.doubleClicked.connect(self.on_display_group_contents)
 
     def _build_layout(self):
         """Build the layout of the widget.
@@ -95,6 +99,8 @@ class GroupsWidget(QtWidgets.QWidget):
         self._student_test_tableview = QtWidgets.QTableView()
 
     def _init_ui(self):
+        """Initialize the ui.
+        """
 
         self._build_widgets()
         self._build_layout()
@@ -130,6 +136,27 @@ class GroupsWidget(QtWidgets.QWidget):
 
         if ok and group:
             self._groups_listview.model().add_group(group)
+
+    def on_display_group_contents(self, index):
+        """Event handler called when the user double click on group item. Pops up a dialog which shows the contents of the selected group.
+
+        Args:
+            index (PyQt5.QtCore.QModelIndex): the selected item
+        """
+
+        groups_model = self._groups_listview.model()
+        if groups_model is None:
+            return
+
+        selected_group_model = groups_model.data(index, GroupsModel.model)
+
+        samples = [selected_group_model.data(selected_group_model.index(i), QtCore.Qt.DisplayRole) for i in range(selected_group_model.rowCount())]
+
+        dynamic_matrix = self._main_window.dynamic_matrix_widget.model().dynamic_matrix
+
+        dialog = GroupContentsDialog(dynamic_matrix, samples, self._main_window)
+
+        dialog.show()
 
     def on_load_raw_data(self, rawdata_model):
         """Event handler which loads sent rawdata model to the widget tableview.

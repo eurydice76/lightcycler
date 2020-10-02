@@ -143,6 +143,16 @@ class RawDataModel(QtCore.QAbstractTableModel):
                 return str(col+1)
         return None
 
+    def get_row(self, sample, gene, index):
+
+        cond = np.logical_and(self._rawdata['Name'] == sample, self._rawdata['Gene'] == gene)
+        matches = self._rawdata.index[cond].tolist()
+
+        if index < 0 or index >= len(matches):
+            return None
+
+        return matches[index]
+
     @property
     def rawdata(self):
         """Return the raw data.
@@ -162,6 +172,28 @@ class RawDataModel(QtCore.QAbstractTableModel):
         """
 
         self._rawdata = rawdata
+
+    def on_remove_value(self, sample, gene, index):
+        """Remove a value from the dynamic matrix for given sample, genes and index.
+
+        Args:
+            sample (str): the selected sample
+            gene (str): the selected gene
+            index (int): the index
+        """
+
+        cond = np.logical_and(self._rawdata['Name'] == sample, self._rawdata['Gene'] == gene)
+        matches = self._rawdata.index[cond].tolist()
+
+        if index < 0 or index >= len(matches):
+            return
+
+        self.beginRemoveRows(QtCore.QModelIndex(), matches[index], matches[index])
+
+        self._rawdata.drop(matches[index], inplace=True)
+        self._rawdata.reset_index(drop=True, inplace=True)
+
+        self.endRemoveRows()
 
     def rowCount(self, parent=None):
         """Return the number of rows of the model for a given parent.

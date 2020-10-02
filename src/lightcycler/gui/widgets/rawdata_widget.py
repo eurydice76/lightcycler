@@ -1,6 +1,6 @@
 import logging
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 
 class RawDataWidget(QtWidgets.QWidget):
@@ -45,6 +45,27 @@ class RawDataWidget(QtWidgets.QWidget):
             return
 
         model.export(workbook)
+
+    def model(self):
+        """Returns the underlying model.
+
+        Returns:
+            lightcycle.kernel.models.dynamic_matrix_model.DynamicMatrixModel: the model
+        """
+
+        return self._rawdata_tableview.model()
+
+    def on_change_value(self, sample, gene, index):
+
+        rawdata_model = self._rawdata_tableview.model()
+        if rawdata_model is None:
+            return
+
+        row = rawdata_model.get_row(sample, gene, index)
+        if row is None:
+            return
+
+        self._rawdata_tableview.setCurrentIndex(rawdata_model.index(row, 0))
 
     def on_load_raw_data(self, rawdata_model):
         """Event handler which loads sent rawdata model to the widget tableview.
