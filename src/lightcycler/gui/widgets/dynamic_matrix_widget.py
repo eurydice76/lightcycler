@@ -44,7 +44,7 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
         self._view_label = QtWidgets.QLabel('View')
 
         self._view_combobox = QtWidgets.QComboBox()
-        self._view_combobox.addItems(['means', 'stds', 'number of values'])
+        self._view_combobox.addItems(['means', 'stdevs', 'number of values'])
 
         self._dynamic_matrix_tableview = QtWidgets.QTableView()
         dynamic_matrix_model = DynamicMatrixModel()

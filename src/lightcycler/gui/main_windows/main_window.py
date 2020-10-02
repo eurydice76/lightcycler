@@ -212,6 +212,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.load_groups.emit(groups)
 
+        logging.info('Successfully imported {} file'.format(excel_file))
+
     def on_open_lightcycler_files(self):
         """Event handler which loads several lightcycler files.
         """
@@ -233,6 +235,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Read the pdf file and add the data to the model. Any kind of error must be caught here.
             try:
+                self.statusBar().showMessage('Reading {} file ...'.format(pdf_file))
                 rawdata_model.add_data(pdf_file)
 
             except Exception as error:
@@ -242,6 +245,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             progress_bar.update(progress+1)
 
+        self.statusBar().showMessage('')
         logging.info('Loaded successfully {} files out of {}'.format(n_loaded_files, n_pdf_files))
 
         # Sort the model.
@@ -255,7 +259,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.build_dynamic_matrix.emit(rawdata_model)
 
     def on_quit_application(self):
-        """Event handler when the application is exited.
+        """Event handler which quits the application.
         """
 
         choice = QtWidgets.QMessageBox.question(self, 'Quit', "Do you really want to quit?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)

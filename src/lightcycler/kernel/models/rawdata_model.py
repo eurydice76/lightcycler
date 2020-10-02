@@ -126,14 +126,11 @@ class RawDataModel(QtCore.QAbstractTableModel):
         worksheet = workbook.get_sheet_by_name('raw data')
 
         for i, v in enumerate(self._rawdata.columns):
-            worksheet.cell(row=1, column=i+2).value = v
-
-        for i, v in enumerate(self._rawdata.index):
-            worksheet.cell(row=i+2, column=1).value = v
+            worksheet.cell(row=1, column=i+1).value = v
 
         for i in range(len(self._rawdata.index)):
             for j in range(len(self._rawdata.columns)):
-                worksheet.cell(row=i+2, column=j+2).value = self._rawdata.iloc[i, j]
+                worksheet.cell(row=i+2, column=j+1).value = self._rawdata.iloc[i, j]
 
     def headerData(self, col, orientation, role):
         """Returns the header data for a given row/column, orientation and role
