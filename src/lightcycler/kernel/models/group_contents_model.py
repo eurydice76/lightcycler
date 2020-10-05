@@ -1,29 +1,47 @@
-from PyQt5 import QtCore
+import collections
+import logging
+import os
+import re
+
+from PyQt5 import QtCore, QtGui
+
+import openpyxl
+
+import tabula
+
+import numpy as np
+
+import pandas as pd
 
 
-class GroupContentsModel(QtCore.QAbstractListModel):
+class GroupContentsModel(QtCore.QAbstractTableModel):
 
-    def __init__(self, *args, **kwargs):
+    sample = QtCore.Qt.UserRole + 1
+
+    gene = QtCore.Qt.UserRole + 2
+
+    change_value = QtCore.pyqtSignal(str, str, int, float)
+
+    remove_value = QtCore.pyqtSignal(str, str, int)
+
+    select_value = QtCore.pyqtSignal(str, str, int)
+
+    def __init__(self, group_contents, *args, **kwargs):
+        """Constructor.
+        """
 
         super(GroupContentsModel, self).__init__(*args, **kwargs)
 
-        self._samples = []
+        self._group_contents = group_contents
 
-    def add_sample(self, sample):
-        """Add a sample to the model.
+    def columnCount(self, parent=None):
+        """Return the number of columns of the model for a given parent.
 
-        Args:
-            sample (str): the sample
+        Returns:
+            int: the number of columns
         """
 
-        if sample in self._samples:
-            return
-
-        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
-
-        self._samples.append(sample)
-
-        self.endInsertRows()
+        return max([len(v[2]) for v in self._group_contents])
 
     def data(self, index, role):
         """Get the data at a given index for a given role.
@@ -39,52 +57,110 @@ class GroupContentsModel(QtCore.QAbstractListModel):
         if not index.isValid():
             return QtCore.QVariant()
 
-        if not self._samples:
-            return QtCore.QVariant()
+        row = index.row()
+        col = index.column()
 
-        idx = index.row()
+        sample, gene, values = self._group_contents[row]
 
         if role == QtCore.Qt.DisplayRole:
-            return self._samples[idx]
 
-    def remove_samples(self, items):
-        """
-        """
+            return str(values[col]) if col < len(values) else QtCore.QVariant()
 
-        indexes = []
+        elif role == GroupContentsModel.sample:
 
-        for item in items:
-            try:
-                indexes.append(self._samples.index(item))
-            except ValueError:
-                continue
+            return sample
 
-        indexes.reverse()
+        elif role == GroupContentsModel.gene:
 
-        for idx in indexes:
-            self.beginRemoveRows(QtCore.QModelIndex(), idx, idx)
-            del self._samples[idx]
-            self.endRemoveRows()
+            return gene
 
-    def reset(self):
-        """Reset the model.
+    def flags(self, index):
+        """Return the flag for the item with specified index.
+
+        Args:
+            int: the flag
         """
 
-        self._samples = []
+        row = index.row()
+        col = index.column()
+
+        _, _, values = self._group_contents[row]
+
+        default_flags = super(GroupContentsModel, self).flags(index)
+
+        if col >= len(values):
+            return default_flags
+        else:
+            return QtCore.Qt.ItemIsEditable | default_flags
+
+    def headerData(self, idx, orientation, role):
+        """Returns the header data for a given index, orientation and role.
+
+        Args:
+            idx (int): the index
+            orientation (int): the orientation
+            role (int): the role
+        """
+
+        if role == QtCore.Qt.DisplayRole:
+            if orientation == QtCore.Qt.Horizontal:
+                return idx
+            else:
+                return self._group_contents[idx][0]
+
+    def remove_contents(self, row, col):
+
+        if row < 0 or row >= len(self._group_contents):
+            return
+
+        sample, gene, values = self._group_contents[row]
+
+        if col < 0 or col >= len(values):
+            return
+
+        del values[col]
+
+        self.remove_value.emit(sample, gene, col)
+
         self.layoutChanged.emit()
 
     def rowCount(self, parent=None):
-        """Returns the number of samples.
-        """
-
-        return len(self._samples)
-
-    @ property
-    def samples(self):
-        """Getter for the samples.
+        """Return the number of rows of the model for a given parent.
 
         Returns:
-            list of str: the samples
+            int: the number of rows
         """
 
-        return self._samples
+        return len(self._group_contents)
+
+    def setData(self, index, value, role):
+        """Set the data for a given index and given role.
+
+        Args:
+            value (QtCore.QVariant): the data
+        """
+
+        if not index.isValid():
+            return QtCore.QVariant()
+
+        row = index.row()
+        col = index.column()
+
+        sample, gene, values = self._group_contents[row]
+
+        if col < 0 or col >= len(values):
+            return super(GroupContentsModel, self).setData(index, value, role)
+
+        if role == QtCore.Qt.EditRole:
+
+            try:
+                new_value = float(value)
+            except ValueError:
+                return super(GroupContentsModel, self).setData(index, value, role)
+            else:
+                values[col] = new_value
+                self.dataChanged.emit(index, index)
+                self.change_value.emit(sample, gene, col, new_value)
+                return True
+
+        return super(GroupContentsModel, self).setData(index, value, role)

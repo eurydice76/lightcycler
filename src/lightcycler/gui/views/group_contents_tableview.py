@@ -1,9 +1,15 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class SampleContentsTableView(QtWidgets.QTableView):
+class GroupContentsTableView(QtWidgets.QTableView):
     """
     """
+
+    def __init__(self, *args, **kwargs):
+
+        super(GroupContentsTableView, self).__init__(*args, **kwargs)
+
+        self.setSelectionMode(QtWidgets.QTableView.SingleSelection)
 
     def keyPressEvent(self, event):
         """Event handler for keyboard interaction.
@@ -22,4 +28,4 @@ class SampleContentsTableView(QtWidgets.QTableView):
             sample_contents_model.remove_contents(current_index.row(), current_index.column())
 
         else:
-            super(SampleContentsTableView, self).keyPressEvent(event)
+            super(GroupContentsTableView, self).keyPressEvent(event)

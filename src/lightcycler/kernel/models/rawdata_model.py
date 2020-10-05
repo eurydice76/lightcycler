@@ -173,6 +173,25 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self._rawdata = rawdata
 
+    def on_change_value(self, sample, gene, index, new_value):
+        """Change a value of the raw data.
+
+        Args:
+            sample (str): the selected sample
+            gene (str): the selected gene
+            index (int): the index
+            new_value (float): the new value
+        """
+
+        cond = np.logical_and(self._rawdata['Name'] == sample, self._rawdata['Gene'] == gene)
+        matches = self._rawdata.index[cond].tolist()
+
+        if index < 0 or index >= len(matches):
+            return
+
+        self._rawdata.loc[matches[index], 'CP'] = new_value
+        self.layoutChanged.emit()
+
     def on_remove_value(self, sample, gene, index):
         """Remove a value from the dynamic matrix for given sample, genes and index.
 

@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
 
-from lightcycler.gui.views.sample_contents_tableview import SampleContentsTableView
-from lightcycler.kernel.models.sample_contents_model import SampleContentsModel
+from lightcycler.gui.views.group_contents_tableview import GroupContentsTableView
+from lightcycler.kernel.models.group_contents_model import GroupContentsModel
 
 
 class GroupContentsDialog(QtWidgets.QDialog):
@@ -36,7 +36,7 @@ class GroupContentsDialog(QtWidgets.QDialog):
         hlayout.addWidget(self._selected_gene_combobox)
         hlayout.addStretch()
 
-        main_layout.addWidget(self._values_per_sample_tableview)
+        main_layout.addWidget(self._group_contents_tableview)
 
         main_layout.addLayout(hlayout)
 
@@ -48,7 +48,7 @@ class GroupContentsDialog(QtWidgets.QDialog):
         """Build the widgets of the widget.
         """
 
-        self._values_per_sample_tableview = SampleContentsTableView(self)
+        self._group_contents_tableview = GroupContentsTableView(self)
 
         self._selected_gene_label = QtWidgets.QLabel('Gene')
         self._selected_gene_combobox = QtWidgets.QComboBox()
@@ -75,30 +75,33 @@ class GroupContentsDialog(QtWidgets.QDialog):
         for sample in self._samples:
             values_per_sample.append((sample, gene, self._dynamic_matrix[sample].loc[gene]))
 
-        sample_contents_model = SampleContentsModel(values_per_sample, self)
+        group_contents_model = GroupContentsModel(values_per_sample, self)
 
-        self._values_per_sample_tableview.setModel(sample_contents_model)
-        self._values_per_sample_tableview.selectionModel().selectionChanged.connect(self.on_select_value)
+        self._group_contents_tableview.setModel(group_contents_model)
+        self._group_contents_tableview.selectionModel().selectionChanged.connect(self.on_select_value)
 
         dynamic_matrix_model = self._main_window.dynamic_matrix_widget.model()
         rawdata_model = self._main_window.rawdata_widget.model()
 
-        sample_contents_model.remove_value.connect(rawdata_model.on_remove_value)
-        sample_contents_model.change_value.connect(self._main_window.rawdata_widget.on_change_value)
-        sample_contents_model.remove_value.connect(dynamic_matrix_model.on_remove_value)
+        group_contents_model.change_value.connect(rawdata_model.on_change_value)
+        group_contents_model.remove_value.connect(rawdata_model.on_remove_value)
+
+        group_contents_model.change_value.connect(dynamic_matrix_model.on_change_value)
+        group_contents_model.remove_value.connect(dynamic_matrix_model.on_remove_value)
+        group_contents_model.select_value.connect(self._main_window.rawdata_widget.on_select_value)
 
     def on_select_value(self, event):
         """Event handler which will show the selected value in the raw data table view.
         """
 
-        current_index = self._values_per_sample_tableview.currentIndex()
+        current_index = self._group_contents_tableview.currentIndex()
 
-        sample_contents_model = self._values_per_sample_tableview.model()
+        group_contents_model = self._group_contents_tableview.model()
 
-        sample = sample_contents_model.data(current_index, SampleContentsModel.sample)
+        sample = group_contents_model.data(current_index, GroupContentsModel.sample)
 
-        gene = sample_contents_model.data(current_index, SampleContentsModel.gene)
+        gene = group_contents_model.data(current_index, GroupContentsModel.gene)
 
         index = current_index.column()
 
-        sample_contents_model.change_value.emit(sample, gene, index)
+        group_contents_model.select_value.emit(sample, gene, index)

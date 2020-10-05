@@ -11,7 +11,7 @@ import numpy as np
 
 import scikit_posthocs as sk
 
-from lightcycler.kernel.models.group_contents_model import GroupContentsModel
+from lightcycler.kernel.models.samples_list_model import SamplesListModel
 
 
 class GroupsModel(QtCore.QAbstractListModel):
@@ -39,7 +39,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
 
-        self._groups.append((group_name, GroupContentsModel(self), True))
+        self._groups.append((group_name, SamplesListModel(self), True))
 
         self.endInsertRows()
 
@@ -146,7 +146,7 @@ class GroupsModel(QtCore.QAbstractListModel):
         for group in groups.columns:
             samples = groups[group].dropna()
 
-            group_contents_model = GroupContentsModel()
+            group_contents_model = SamplesListModel()
             for sample in samples:
                 group_contents_model.add_sample(sample)
 

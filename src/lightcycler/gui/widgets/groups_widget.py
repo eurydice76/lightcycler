@@ -5,8 +5,8 @@ from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.gui.dialogs.means_and_errors_dialog import MeansAndErrorsDialog
 from lightcycler.gui.dialogs.group_contents_dialog import GroupContentsDialog
-from lightcycler.gui.views.group_contents_listview import GroupContentsListView
 from lightcycler.gui.views.groups_listview import GroupsListView
+from lightcycler.gui.views.samples_list_listview import SamplesListListView
 from lightcycler.kernel.models.groups_model import GroupsModel
 from lightcycler.kernel.models.pvalues_data_model import PValuesDataModel
 from lightcycler.kernel.models.samples_model import SamplesModel
@@ -83,7 +83,7 @@ class GroupsWidget(QtWidgets.QWidget):
         self._groups_listview.setSelectionMode(QtWidgets.QListView.SingleSelection)
         self._groups_listview.setModel(GroupsModel(self))
 
-        self._group_contents_listview = GroupContentsListView(None, self)
+        self._group_contents_listview = SamplesListListView(None, self)
         self._group_contents_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._group_contents_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
 

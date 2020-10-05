@@ -187,6 +187,22 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
         return self._n_values
 
+    def on_change_value(self, sample, gene, index, new_value):
+        """Change a value of the raw data.
+
+            Args:
+                sample (str): the selected sample
+                gene (str): the selected gene
+                index (int): the index
+                new_value (float): the new value
+        """
+
+        self._means[sample].loc[gene] = round(np.mean(self._dynamic_matrix[sample].loc[gene]), 3)
+        self._stds[sample].loc[gene] = round(np.std(self._dynamic_matrix[sample].loc[gene]), 3)
+        self._n_values[sample].loc[gene] = len(self._dynamic_matrix[sample].loc[gene])
+
+        self.layoutChanged.emit()
+
     def on_remove_value(self, sample, gene, index):
         """Remove a value from the dynamic matrix for given sample, genes and index.
 

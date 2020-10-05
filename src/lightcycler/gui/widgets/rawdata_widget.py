@@ -55,7 +55,7 @@ class RawDataWidget(QtWidgets.QWidget):
 
         return self._rawdata_tableview.model()
 
-    def on_change_value(self, sample, gene, index):
+    def on_select_value(self, sample, gene, index):
 
         rawdata_model = self._rawdata_tableview.model()
         if rawdata_model is None:
