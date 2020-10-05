@@ -2,6 +2,7 @@
     _ MainWindow
 """
 
+import copy
 import logging
 import os
 import sys
@@ -43,6 +44,8 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
 
         self._init_ui()
+
+        self._rawdata_default = None
 
     def _build_events(self):
         """Build the signal/slots.
@@ -98,6 +101,14 @@ class MainWindow(QtWidgets.QMainWindow):
         export_action.setStatusTip('Export data to an Excel spreadsheet')
         export_action.triggered.connect(self.on_export_data)
         file_menu.addAction(export_action)
+
+        file_menu.addSeparator()
+
+        reset_action = QtWidgets.QAction('&Reset', self)
+        reset_action.setShortcut('Ctrl+E')
+        reset_action.setStatusTip('Reset data')
+        reset_action.triggered.connect(self.on_reset_data)
+        file_menu.addAction(reset_action)
 
         file_menu.addSeparator()
 
@@ -211,17 +222,21 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error('Invalid excel file: missing "raw data" and/or "groups" sheets')
             return
 
+        logging.info('Importing {} file. Please wait.'.format(excel_file))
+
         rawdata = pd.read_excel(excel_file, sheet_name='raw data')
+
+        self._rawdata_default = rawdata
 
         rawdata_model = RawDataModel(self)
 
         rawdata_model.rawdata = rawdata
 
-        groups = pd.read_excel(excel_file, sheet_name='groups')
-
         self.raw_data_loaded.emit(rawdata_model)
 
         self.build_dynamic_matrix.emit(rawdata_model)
+
+        groups = pd.read_excel(excel_file, sheet_name='groups')
 
         self.load_groups.emit(groups)
 
@@ -267,6 +282,8 @@ class MainWindow(QtWidgets.QMainWindow):
         except RawDataError:
             pass
 
+        self._rawdata_default = copy.copy(rawdata_model.rawdata)
+
         self.raw_data_loaded.emit(rawdata_model)
 
         self.build_dynamic_matrix.emit(rawdata_model)
@@ -278,6 +295,21 @@ class MainWindow(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, 'Quit', "Do you really want to quit?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
             sys.exit()
+
+    def on_reset_data(self):
+        """Reset the rawdata, the dynamic matrix and the groups loaded intially.
+        """
+
+        if self._rawdata_default is None:
+            return
+
+        rawdata_model = RawDataModel(self)
+
+        rawdata_model.rawdata = self._rawdata_default
+
+        self.raw_data_loaded.emit(rawdata_model)
+
+        self.build_dynamic_matrix.emit(rawdata_model)
 
     @property
     def rawdata_widget(self):
