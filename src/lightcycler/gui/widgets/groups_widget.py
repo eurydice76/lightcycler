@@ -6,10 +6,10 @@ from PyQt5 import QtCore, QtWidgets
 from lightcycler.gui.dialogs.means_and_errors_dialog import MeansAndErrorsDialog
 from lightcycler.gui.dialogs.group_contents_dialog import GroupContentsDialog
 from lightcycler.gui.views.groups_listview import GroupsListView
-from lightcycler.gui.views.samples_list_listview import SamplesListListView
+from lightcycler.gui.views.samples_per_group_listview import SamplesPerGroupListView
+from lightcycler.kernel.models.available_samples_model import AvailableSamplesModel
 from lightcycler.kernel.models.groups_model import GroupsModel
 from lightcycler.kernel.models.pvalues_data_model import PValuesDataModel
-from lightcycler.kernel.models.samples_model import SamplesModel
 
 
 class GroupsWidget(QtWidgets.QWidget):
@@ -30,7 +30,7 @@ class GroupsWidget(QtWidgets.QWidget):
 
         self._groups_listview.selectionModel().currentChanged.connect(self.on_select_group)
         self._new_group_pushbutton.clicked.connect(self.on_create_new_group)
-        self._reset_groups_pushbutton.clicked.connect(self.on_reset_groups)
+        self._reset_groups_pushbutton.clicked.connect(self.on_clear)
         self._run_ttest_pushbutton.clicked.connect(self.on_run_student_test)
         self._selected_gene_combobox.currentTextChanged.connect(self.on_select_gene)
         self._groups_listview.doubleClicked.connect(self.on_display_group_contents)
@@ -43,7 +43,7 @@ class GroupsWidget(QtWidgets.QWidget):
 
         groups_layout = QtWidgets.QHBoxLayout()
 
-        groups_layout.addWidget(self._samples_listview)
+        groups_layout.addWidget(self._available_samples_listview)
 
         vlayout = QtWidgets.QVBoxLayout()
         vlayout.addWidget(self._groups_listview)
@@ -52,7 +52,7 @@ class GroupsWidget(QtWidgets.QWidget):
 
         groups_layout.addLayout(vlayout)
 
-        groups_layout.addWidget(self._group_contents_listview)
+        groups_layout.addWidget(self._samples_per_group_listview)
 
         main_layout.addLayout(groups_layout)
 
@@ -73,19 +73,19 @@ class GroupsWidget(QtWidgets.QWidget):
         """Build the widgets of the widget.
         """
 
-        self._samples_listview = QtWidgets.QListView()
-        self._samples_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self._samples_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
-        self._samples_listview.setDragEnabled(True)
+        self._available_samples_listview = QtWidgets.QListView()
+        self._available_samples_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self._available_samples_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
+        self._available_samples_listview.setDragEnabled(True)
 
         self._groups_listview = GroupsListView()
         self._groups_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._groups_listview.setSelectionMode(QtWidgets.QListView.SingleSelection)
         self._groups_listview.setModel(GroupsModel(self))
 
-        self._group_contents_listview = SamplesListListView(None, self)
-        self._group_contents_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self._group_contents_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
+        self._samples_per_group_listview = SamplesPerGroupListView(None, self)
+        self._samples_per_group_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self._samples_per_group_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
 
         self._new_group_pushbutton = QtWidgets.QPushButton('New group')
 
@@ -158,31 +158,39 @@ class GroupsWidget(QtWidgets.QWidget):
 
         dialog.show()
 
-    def on_load_raw_data(self, rawdata_model):
+    def on_load_groups(self, samples, groups):
         """Event handler which loads sent rawdata model to the widget tableview.
         """
 
-        samples_model = SamplesModel(rawdata_model.samples)
+        groups_model = self._groups_listview.model()
+        groups_model.load_groups(groups)
 
-        self._samples_listview.setModel(samples_model)
+        filtered_samples = [sample for sample in samples if sample in groups.values]
 
-        self._group_contents_listview.set_samples_model(samples_model)
+        samples_model = AvailableSamplesModel()
+        samples_model.samples = samples
 
-    def on_reset_groups(self):
-        """Event handler which resets all the groups defined so far
+        self._available_samples_listview.setModel(samples_model)
+
+        samples_model.remove_samples(filtered_samples)
+
+        self._samples_per_group_listview.set_samples_model(samples_model)
+
+    def on_clear(self):
+        """Event handler which resets all the groups defined so far.
         """
 
-        samples_model = self._samples_listview.model()
+        samples_model = self._available_samples_listview.model()
         if samples_model is not None:
-            samples_model.reset()
+            samples_model.clear()
 
         groups_model = self._groups_listview.model()
         if groups_model is not None:
-            groups_model.reset()
+            groups_model.clear()
 
-        group_contents_model = self._group_contents_listview.model()
-        if group_contents_model is not None:
-            group_contents_model.reset()
+        samples_per_group_model = self._samples_per_group_listview.model()
+        if samples_per_group_model is not None:
+            samples_per_group_model.clear()
 
     def on_run_student_test(self):
         """Event handler which will performs pairwise student test on the groups defined so far.
@@ -226,9 +234,15 @@ class GroupsWidget(QtWidgets.QWidget):
 
         groups_model = self._groups_listview.model()
 
-        group_contents_model = groups_model.data(idx, groups_model.model)
-
-        if group_contents_model == QtCore.QVariant():
+        samples_per_group_model = groups_model.data(idx, groups_model.model)
+        if samples_per_group_model == QtCore.QVariant():
             return
 
-        self._group_contents_listview.setModel(group_contents_model)
+        self._samples_per_group_listview.setModel(samples_per_group_model)
+
+    def on_set_available_samples(self, samples):
+
+        available_sample_model = AvailableSamplesModel(self)
+        available_sample_model.samples = samples
+
+        self._available_samples_listview.setModel(available_sample_model)

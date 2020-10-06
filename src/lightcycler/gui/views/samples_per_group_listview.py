@@ -1,12 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class SamplesListListView(QtWidgets.QListView):
+class SamplesPerGroupListView(QtWidgets.QListView):
     """This class implements an interface for listviews onto which data can be dropped in.
     """
 
     def __init__(self, samples_model, *args, **kwargs):
-        super(SamplesListListView, self).__init__(*args, **kwargs)
+        super(SamplesPerGroupListView, self).__init__(*args, **kwargs)
 
         self._samples_model = samples_model
 
@@ -75,7 +75,7 @@ class SamplesListListView(QtWidgets.QListView):
                 self.setCurrentIndex(index)
 
         else:
-            super(SamplesListListView, self).keyPressEvent(event)
+            super(SamplesPerGroupListView, self).keyPressEvent(event)
 
     def set_samples_model(self, samples_model):
         """Attach a samples model to the widget

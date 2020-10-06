@@ -1,4 +1,5 @@
 import collections
+import copy
 import logging
 import os
 import re
@@ -21,6 +22,8 @@ class RawDataError(Exception):
 
 class RawDataModel(QtCore.QAbstractTableModel):
 
+    update_dynamic_matrix = QtCore.pyqtSignal(QtCore.QAbstractTableModel)
+
     def __init__(self, *args, **kwargs):
         """Constructor.
         """
@@ -28,6 +31,8 @@ class RawDataModel(QtCore.QAbstractTableModel):
         super(RawDataModel, self).__init__(*args, **kwargs)
 
         self._rawdata = pd.DataFrame()
+
+        self._rawdata_default = copy.copy(self._rawdata)
 
     def add_data(self, pdf_file, sort=False):
         """Add new data to the model.
@@ -78,6 +83,18 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         if sort:
             self.sort()
+
+        self._rawdata_default = copy.copy(self._rawdata)
+
+        self.layoutChanged.emit()
+
+    def on_clear(self):
+        """
+        """
+
+        self._rawdata = pd.DataFrame()
+
+        self.layoutChanged.emit()
 
     def columnCount(self, parent=None):
         """Return the number of columns of the model for a given parent.
@@ -168,10 +185,22 @@ class RawDataModel(QtCore.QAbstractTableModel):
         """Setter for rawdata.
 
         Args:
-            rawdata (pandas.DataFrame); the raw data
+            rawdata (pandas.DataFrame): the raw data
         """
 
         self._rawdata = rawdata
+        self._rawdata_default = copy.copy(self._rawdata)
+        self.layoutChanged.emit()
+
+        self.update_dynamic_matrix.emit(self)
+
+    def on_reset(self):
+
+        self._rawdata = copy.copy(self._rawdata_default)
+
+        self.layoutChanged.emit()
+
+        self.update_dynamic_matrix.emit(self)
 
     def on_change_value(self, sample, gene, index, new_value):
         """Change a value of the raw data.

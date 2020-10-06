@@ -1,29 +1,24 @@
+import copy
+
 from PyQt5 import QtCore
 
 
-class SamplesListModel(QtCore.QAbstractListModel):
+class AvailableSamplesModel(QtCore.QAbstractListModel):
 
     def __init__(self, *args, **kwargs):
 
-        super(SamplesListModel, self).__init__(*args, **kwargs)
+        super(AvailableSamplesModel, self).__init__(*args, **kwargs)
 
         self._samples = []
 
-    def add_sample(self, sample):
-        """Add a sample to the model.
+        self._samples_default = []
 
-        Args:
-            sample (str): the sample
-        """
+    def clear(self):
 
-        if sample in self._samples:
-            return
+        self._samples = []
+        self._samples_default = []
 
-        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
-
-        self._samples.append(sample)
-
-        self.endInsertRows()
+        self.layoutChanged.emit()
 
     def data(self, index, role):
         """Get the data at a given index for a given role.
@@ -46,6 +41,19 @@ class SamplesListModel(QtCore.QAbstractListModel):
 
         if role == QtCore.Qt.DisplayRole:
             return self._samples[idx]
+
+    def flags(self, index):
+        """Return the flags of an itme with a given index.
+
+        Args:
+            index (PyQt5.QtCore.QModelIndex): the index
+
+        Returns:
+            int: the flag
+        """
+
+        if index.isValid():
+            return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEnabled
 
     def remove_samples(self, items):
         """
@@ -70,7 +78,7 @@ class SamplesListModel(QtCore.QAbstractListModel):
         """Reset the model.
         """
 
-        self._samples = []
+        self._samples = copy.copy(self._samples_default)
         self.layoutChanged.emit()
 
     def rowCount(self, parent=None):
@@ -79,12 +87,16 @@ class SamplesListModel(QtCore.QAbstractListModel):
 
         return len(self._samples)
 
-    @ property
+    @property
     def samples(self):
-        """Getter for the samples.
-
-        Returns:
-            list of str: the samples
-        """
 
         return self._samples
+
+    @samples.setter
+    def samples(self, samples):
+
+        self._samples = samples
+
+        self._samples_default = copy.copy(samples)
+
+        self.layoutChanged.emit()

@@ -1,17 +1,29 @@
-import copy
-
 from PyQt5 import QtCore
 
 
-class SamplesModel(QtCore.QAbstractListModel):
+class SamplesPerGroupModel(QtCore.QAbstractListModel):
 
-    def __init__(self, samples, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
-        super(SamplesModel, self).__init__(*args, **kwargs)
+        super(SamplesPerGroupModel, self).__init__(*args, **kwargs)
 
-        self._samples = samples
+        self._samples = []
 
-        self._samples_copy = copy.copy(samples)
+    def add_sample(self, sample):
+        """Add a sample to the model.
+
+        Args:
+            sample (str): the sample
+        """
+
+        if sample in self._samples:
+            return
+
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+
+        self._samples.append(sample)
+
+        self.endInsertRows()
 
     def data(self, index, role):
         """Get the data at a given index for a given role.
@@ -35,19 +47,6 @@ class SamplesModel(QtCore.QAbstractListModel):
         if role == QtCore.Qt.DisplayRole:
             return self._samples[idx]
 
-    def flags(self, index):
-        """Return the flags of an itme with a given index.
-
-        Args:
-            index (PyQt5.QtCore.QModelIndex): the index
-
-        Returns:
-            int: the flag
-        """
-
-        if index.isValid():
-            return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEnabled
-
     def remove_samples(self, items):
         """
         """
@@ -67,15 +66,25 @@ class SamplesModel(QtCore.QAbstractListModel):
             del self._samples[idx]
             self.endRemoveRows()
 
-    def reset(self):
+    def clear(self):
         """Reset the model.
         """
 
-        self._samples = copy.copy(self._samples_copy)
+        self._samples = []
         self.layoutChanged.emit()
 
     def rowCount(self, parent=None):
-        """Returns the number of samples.        
+        """Returns the number of samples.
         """
 
         return len(self._samples)
+
+    @ property
+    def samples(self):
+        """Getter for the samples.
+
+        Returns:
+            list of str: the samples
+        """
+
+        return self._samples

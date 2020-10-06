@@ -36,6 +36,15 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         self._means = pd.DataFrame()
         self._stds = pd.DataFrame()
 
+    def on_clear(self):
+
+        self._dynamic_matrix = pd.DataFrame()
+        self._n_values = pd.DataFrame()
+        self._means = pd.DataFrame()
+        self._stds = pd.DataFrame()
+
+        self.layoutChanged.emit()
+
     def columnCount(self, parent=None):
         """Return the number of columns of the model for a given parent.
 

@@ -11,7 +11,7 @@ import numpy as np
 
 import scikit_posthocs as sk
 
-from lightcycler.kernel.models.samples_list_model import SamplesListModel
+from lightcycler.kernel.models.samples_per_group_model import SamplesPerGroupModel
 
 
 class GroupsModel(QtCore.QAbstractListModel):
@@ -39,9 +39,13 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
 
-        self._groups.append((group_name, SamplesListModel(self), True))
+        self._groups.append((group_name, SamplesPerGroupModel(self), True))
 
         self.endInsertRows()
+
+    def clear(self):
+
+        self.reset()
 
     def data(self, index, role):
         """Get the data at a given index for a given role.
@@ -134,7 +138,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         return (means, errors)
 
-    def on_load_groups(self, groups):
+    def load_groups(self, groups):
         """Reset the model and load groups.
 
         Args:
@@ -146,7 +150,7 @@ class GroupsModel(QtCore.QAbstractListModel):
         for group in groups.columns:
             samples = groups[group].dropna()
 
-            group_contents_model = SamplesListModel()
+            group_contents_model = SamplesPerGroupModel()
             for sample in samples:
                 group_contents_model.add_sample(sample)
 

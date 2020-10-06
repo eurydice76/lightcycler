@@ -2,6 +2,8 @@ import logging
 
 from PyQt5 import QtCore, QtWidgets
 
+from lightcycler.kernel.models.rawdata_model import RawDataModel
+
 
 class RawDataWidget(QtWidgets.QWidget):
 
@@ -26,6 +28,8 @@ class RawDataWidget(QtWidgets.QWidget):
         """
 
         self._rawdata_tableview = QtWidgets.QTableView()
+        rawdata_model = RawDataModel(self)
+        self._rawdata_tableview.setModel(rawdata_model)
 
     def _init_ui(self):
 
@@ -66,9 +70,3 @@ class RawDataWidget(QtWidgets.QWidget):
             return
 
         self._rawdata_tableview.setCurrentIndex(rawdata_model.index(row, 0))
-
-    def on_load_raw_data(self, rawdata_model):
-        """Event handler which loads sent rawdata model to the widget tableview.
-        """
-
-        self._rawdata_tableview.setModel(rawdata_model)
