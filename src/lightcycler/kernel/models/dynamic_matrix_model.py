@@ -283,7 +283,7 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-        self.propagate_means.emit(self._means)
+        self.propagate_means.emit(self._dynamic_matrix)
 
     def set_view(self, view):
 

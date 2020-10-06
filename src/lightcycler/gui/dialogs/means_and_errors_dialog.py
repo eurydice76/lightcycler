@@ -6,13 +6,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 
 class MeansAndErrorsDialog(QtWidgets.QDialog):
 
-    def __init__(self, means, errors, *args, **kwargs):
+    def __init__(self, statistics, *args, **kwargs):
 
         super(MeansAndErrorsDialog, self).__init__(*args, **kwargs)
 
-        self._means = means
-
-        self._errors = errors
+        self._statistics = statistics
 
         self._init_ui()
 
@@ -54,7 +52,7 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
 
         self._selected_gene_label = QtWidgets.QLabel('Gene')
         self._selected_gene_combobox = QtWidgets.QComboBox()
-        self._selected_gene_combobox.addItems(self._means.index)
+        self._selected_gene_combobox.addItems(self._statistics.keys())
 
     def _init_ui(self):
 
@@ -77,7 +75,9 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
         self._means_and_errors_axes.set_xlabel('groups')
         self._means_and_errors_axes.set_ylabel('Means')
 
+        statistics_per_gene = self._statistics[gene]
+
         self._means_and_errors_axes.bar(
-            self._means.columns, self._means.loc[gene], yerr=self._errors.loc[gene], align='center', alpha=0.5, ecolor='black', capsize=10)
+            statistics_per_gene.columns, statistics_per_gene.loc['mean'], yerr=statistics_per_gene.loc['stddev'], align='center', alpha=0.5, ecolor='black', capsize=10)
 
         self._means_and_errors_canvas.draw()

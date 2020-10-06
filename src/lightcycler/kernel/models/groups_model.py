@@ -22,7 +22,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         super(GroupsModel, self).__init__(*args, **kwargs)
 
-        self._means = pd.DataFrame()
+        self._dynamic_matrix = pd.DataFrame()
 
         self._groups = []
 
@@ -92,6 +92,22 @@ class GroupsModel(QtCore.QAbstractListModel):
             for j, sample in enumerate(model.samples):
                 worksheet.cell(row=j+2, column=i+1).value = sample
 
+        workbook.create_sheet('statistics')
+        worksheet = workbook.get_sheet_by_name('statistics')
+
+        statistics = self.get_statistics(selected_only=False)
+
+        for i, (gene, statistics_per_gene) in enumerate(statistics.items()):
+            worksheet.cell(row=5*i+1, column=1).value = gene
+            worksheet.cell(row=5*i+2, column=1).value = 'mean'
+            worksheet.cell(row=5*i+3, column=1).value = 'stddev'
+            worksheet.cell(row=5*i+4, column=1).value = 'n'
+            for j, group in enumerate(statistics_per_gene.columns):
+                worksheet.cell(row=5*i+1, column=j+2).value = group
+                worksheet.cell(row=5*i+2, column=j+2).value = statistics_per_gene.loc['mean', group]
+                worksheet.cell(row=5*i+3, column=j+2).value = statistics_per_gene.loc['stddev', group]
+                worksheet.cell(row=5*i+4, column=j+2).value = statistics_per_gene.loc['n', group]
+
     def flags(self, index):
         """Return the flag for the item with specified index.
 
@@ -103,40 +119,52 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         return QtCore.Qt.ItemIsUserCheckable | default_flags
 
-    def get_means_and_errors(self):
-        """Returns the mean and error for each selected group.
+    def get_statistics(self, selected_only=False):
+        """Returns the mean, error and number of samples for each selected group and gene.
+
+        Args:
+            selected_only (bool): if True will coonsider only the selected groups
 
         Returns:
-            2-tuple of pandas.DataFrame: the means and errors
+            collections.OrderedDict: a mapping betweeb the name of the gene and a pandas.DataFrame storing the mean, error and number of value for each selected group
         """
 
-        genes = self._means.index
-        groups = [group for group, _, selected in self._groups if selected]
+        if selected_only:
+            selected_groups = [(group, model) for group, model, selected in self._groups if selected]
+        else:
+            selected_groups = [(group, model) for group, model, _ in self._groups]
 
-        means = pd.DataFrame(np.nan, index=genes, columns=groups)
-        errors = pd.DataFrame(np.nan, index=genes, columns=groups)
+        if not selected_groups:
+            logging.error('No group selected for getting statistics')
+            return None
 
-        # Loop over all selected gene
+        statistics = collections.OrderedDict()
+
+        genes = self._dynamic_matrix.index
+
         for gene in genes:
 
-            for group, model, selected in self._groups:
-                if not selected:
-                    continue
+            statistics_per_gene = pd.DataFrame(np.nan, index=['mean', 'stddev', 'n'], columns=[group for group, _ in selected_groups])
+
+            for group, model in selected_groups:
 
                 values = []
                 for sample in model.samples:
-                    values.append(self._means.loc[gene, sample])
+                    values.extend(self._dynamic_matrix.loc[gene, sample])
 
                 if values:
-                    mean = np.nanmean(values)
-                    std = np.nanstd(values)
+                    mean = np.mean(values)
+                    stddev = np.std(values)
                 else:
-                    mean = std = np.nan
+                    mean = stddev = np.nan
 
-                means.loc[gene, group] = mean
-                errors.loc[gene, group] = std
+                statistics_per_gene.loc['mean', group] = mean
+                statistics_per_gene.loc['stddev', group] = stddev
+                statistics_per_gene.loc['n', group] = len(values)
 
-        return (means, errors)
+            statistics[gene] = statistics_per_gene
+
+        return statistics
 
     def load_groups(self, groups):
         """Reset the model and load groups.
@@ -158,14 +186,14 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.layoutChanged.emit()
 
-    def on_set_dynamic_matrix(self, means):
+    def on_set_dynamic_matrix(self, dynamic_matrix):
         """Event handler which set the dynamic matrix.
 
         Args:
-            means (pandas.DataFrame): the dynamic matrix
+            _dynamic_matrix (pandas.DataFrame): the dynamic matrix
         """
 
-        self._means = means
+        self._dynamic_matrix = dynamic_matrix
 
     def remove_groups(self, items):
         """
@@ -192,7 +220,7 @@ class GroupsModel(QtCore.QAbstractListModel):
         """Reset the model.
         """
 
-        self._means = pd.DataFrame()
+        self.__dynamic_matrix = pd.DataFrame()
         self._groups = []
         self.layoutChanged.emit()
 
@@ -208,7 +236,8 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         student_test_per_gene = collections.OrderedDict()
 
-        for gene in self._means.index:
+        # Loop over the gene and perform the student test for this gene
+        for gene in self._dynamic_matrix.index:
             df = pd.DataFrame(columns=['groups', 'means'])
             for group, model, selected in self._groups:
 
@@ -216,7 +245,8 @@ class GroupsModel(QtCore.QAbstractListModel):
                     continue
 
                 for sample in model.samples:
-                    row = pd.DataFrame([[group, self._means.loc[gene, sample]]], columns=['groups', 'means'])
+                    mean = np.mean(self._dynamic_matrix.loc[gene, sample])
+                    row = pd.DataFrame([[group, mean]], columns=['groups', 'means'])
                     df = pd.concat([df, row])
 
             if not df.empty:

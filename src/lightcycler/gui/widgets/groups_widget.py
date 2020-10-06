@@ -203,12 +203,11 @@ class GroupsWidget(QtWidgets.QWidget):
         self._selected_gene_combobox.clear()
         self._selected_gene_combobox.addItems(self._student_test_per_gene.keys())
 
-        means, errors = groups_model.get_means_and_errors()
-
-        if means.empty:
+        statistics = groups_model.get_statistics(selected_only=True)
+        if statistics is None:
             return
 
-        means_and_errors_dialog = MeansAndErrorsDialog(means, errors, self)
+        means_and_errors_dialog = MeansAndErrorsDialog(statistics, self)
         means_and_errors_dialog.show()
 
     def on_select_gene(self, gene):
