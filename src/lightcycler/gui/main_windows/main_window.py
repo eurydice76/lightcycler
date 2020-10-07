@@ -18,6 +18,7 @@ import lightcycler
 from lightcycler.__pkginfo__ import __version__
 from lightcycler.gui.widgets.logger_widget import QTextEditLogger
 from lightcycler.gui.widgets.dynamic_matrix_widget import DynamicMatrixWidget
+from lightcycler.gui.widgets.genes_widget import GenesWidget
 from lightcycler.gui.widgets.groups_widget import GroupsWidget
 from lightcycler.gui.widgets.rawdata_widget import RawDataWidget
 from lightcycler.kernel.models.rawdata_model import RawDataError, RawDataModel
@@ -30,6 +31,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     clear_data = QtCore.pyqtSignal()
 
+    load_genes = QtCore.pyqtSignal(list, pd.DataFrame)
+
     load_groups = QtCore.pyqtSignal(list, pd.DataFrame)
 
     raw_data_loaded = QtCore.pyqtSignal(list)
@@ -37,6 +40,8 @@ class MainWindow(QtWidgets.QMainWindow):
     reset_data = QtCore.pyqtSignal()
 
     set_available_samples = QtCore.pyqtSignal(list)
+
+    set_available_genes = QtCore.pyqtSignal(list)
 
     def __init__(self, parent=None):
         """Constructor.
@@ -63,8 +68,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clear_data.connect(dynamic_matrix_model.on_clear)
         self.clear_data.connect(self._groups_widget.on_clear)
         self.reset_data.connect(rawdata_model.on_reset)
+        self.load_genes.connect(self._genes_widget.on_load_genes)
         self.load_groups.connect(self._groups_widget.on_load_groups)
         self.set_available_samples.connect(self._groups_widget.on_set_available_samples)
+        self.set_available_genes.connect(self._genes_widget.on_set_available_genes)
 
     def _build_layout(self):
         """Build the layout.
@@ -141,10 +148,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self._rawdata_widget = RawDataWidget(self)
         self._dynamic_matrix_widget = DynamicMatrixWidget(self)
         self._groups_widget = GroupsWidget(self)
+        self._genes_widget = GenesWidget(self)
 
         self._tabs.addTab(self._rawdata_widget, 'Raw data')
         self._tabs.addTab(self._dynamic_matrix_widget, 'Dynamic_matrix')
         self._tabs.addTab(self._groups_widget, 'Groups')
+        self._tabs.addTab(self._genes_widget, 'Genes')
 
         self._logger = QTextEditLogger(self)
         self._logger.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -217,6 +226,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._rawdata_widget.export(workbook)
         self._dynamic_matrix_widget.export(workbook)
         self._groups_widget.export(workbook)
+        self._genes_widget.export(workbook)
 
         try:
             workbook.save(filename)
@@ -252,6 +262,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         groups = pd.read_excel(excel_file, sheet_name='groups')
         self.load_groups.emit(rawdata_model.samples, groups)
+
+        genes_per_group = pd.read_excel(excel_file, sheet_name='genes')
+        self.load_genes.emit(rawdata_model.genes, genes_per_group)
 
         logging.info('Successfully imported {} file'.format(excel_file))
 
@@ -295,9 +308,11 @@ class MainWindow(QtWidgets.QMainWindow):
         except RawDataError:
             pass
 
-        rawdata_model.update_dynamic_matrix.emit()
+        rawdata_model.update_dynamic_matrix.emit(rawdata_model)
 
         self.set_available_samples.emit(rawdata_model.samples)
+
+        self.set_available_genes.emit(rawdata_model.genes)
 
     def on_quit_application(self):
         """Event handler which quits the application.

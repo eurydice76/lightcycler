@@ -3,20 +3,21 @@ import copy
 from PyQt5 import QtCore
 
 
-class AvailableSamplesModel(QtCore.QAbstractListModel):
+class AvailableGenesModel(QtCore.QAbstractListModel):
 
     def __init__(self, *args, **kwargs):
 
-        super(AvailableSamplesModel, self).__init__(*args, **kwargs)
+        super(AvailableGenesModel, self).__init__(*args, **kwargs)
 
-        self._samples = []
+        self._genes = []
 
-        self._samples_default = []
+        self._genes_default = []
 
     def clear(self):
 
-        self._samples = []
-        self._samples_default = []
+        self._genes = []
+
+        self._genes_default()
 
         self.layoutChanged.emit()
 
@@ -34,13 +35,13 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
         if not index.isValid():
             return QtCore.QVariant()
 
-        if not self._samples:
+        if not self._genes:
             return QtCore.QVariant()
 
         idx = index.row()
 
         if role == QtCore.Qt.DisplayRole:
-            return self._samples[idx]
+            return self._genes[idx]
 
     def flags(self, index):
         """Return the flags of an itme with a given index.
@@ -63,7 +64,7 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
 
         for item in items:
             try:
-                indexes.append(self._samples.index(item))
+                indexes.append(self._genes.index(item))
             except ValueError:
                 continue
 
@@ -71,32 +72,31 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
 
         for idx in indexes:
             self.beginRemoveRows(QtCore.QModelIndex(), idx, idx)
-            del self._samples[idx]
+            del self._genes[idx]
             self.endRemoveRows()
 
-    def reset(self):
-        """Reset the model.
-        """
-
-        self._samples = copy.copy(self._samples_default)
-        self.layoutChanged.emit()
-
     def rowCount(self, parent=None):
-        """Returns the number of samples.
+        """Returns the number of genes.
         """
 
-        return len(self._samples)
+        return len(self._genes)
 
     @property
-    def samples(self):
+    def genes(self):
 
-        return self._samples
+        return self._genes
 
-    @samples.setter
-    def samples(self, samples):
+    @genes.setter
+    def genes(self, genes):
 
-        self._samples = samples
+        self._genes = genes
 
-        self._samples_default = copy.copy(samples)
+        self._genes_default = copy.copy(genes)
+
+        self.layoutChanged.emit()
+
+    def reset(self):
+
+        self._genes = copy.copy(self._genes_default)
 
         self.layoutChanged.emit()

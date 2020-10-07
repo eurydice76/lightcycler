@@ -12,7 +12,9 @@ class GroupsListView(QtWidgets.QListView):
             event (PyQt5.QtGui.QKeyEvent): the keyboard event
         """
 
-        if event.key() == QtCore.Qt.Key_Delete:
+        key = event.key()
+
+        if key == QtCore.Qt.Key_Delete:
 
             groups_model = self.model()
             if groups_model is None:
@@ -24,6 +26,20 @@ class GroupsListView(QtWidgets.QListView):
             if groups_model.rowCount() > 0:
                 index = groups_model.index(groups_model.rowCount()-1)
                 self.setCurrentIndex(index)
+
+        elif key == QtCore.Qt.Key_Space:
+
+            groups_model = self.model()
+            if groups_model is None:
+                return
+
+            selected_indexes = self.selectedIndexes()
+            if not selected_indexes:
+                return
+
+            selected_row = selected_indexes[0].row()
+
+            groups_model.group_control = selected_row
 
         else:
             super(GroupsListView, self).keyPressEvent(event)

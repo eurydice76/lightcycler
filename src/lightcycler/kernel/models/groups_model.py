@@ -1,7 +1,7 @@
 import collections
 import logging
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 
 import numpy as np
 
@@ -11,12 +11,14 @@ import numpy as np
 
 import scikit_posthocs as sk
 
-from lightcycler.kernel.models.samples_per_group_model import SamplesPerGroupModel
+from lightcycler.kernel.models.droppable_model import DroppableModel
 
 
 class GroupsModel(QtCore.QAbstractListModel):
 
     model = QtCore.Qt.UserRole + 1
+
+    selected = QtCore.Qt.UserRole + 2
 
     def __init__(self, *args, **kwargs):
 
@@ -25,6 +27,8 @@ class GroupsModel(QtCore.QAbstractListModel):
         self._dynamic_matrix = pd.DataFrame()
 
         self._groups = []
+
+        self._group_control = -1
 
     def add_group(self, group_name):
         """Add a new group to the model.
@@ -39,7 +43,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
 
-        self._groups.append((group_name, SamplesPerGroupModel(self), True))
+        self._groups.append([group_name, DroppableModel(self), True])
 
         self.endInsertRows()
 
@@ -74,8 +78,15 @@ class GroupsModel(QtCore.QAbstractListModel):
         elif role == QtCore.Qt.CheckStateRole:
             return QtCore.Qt.Checked if selected else QtCore.Qt.Unchecked
 
+        elif role == QtCore.Qt.ForegroundRole:
+
+            return QtGui.QBrush(QtCore.Qt.red) if idx == self._group_control else QtGui.QBrush(QtCore.Qt.black)
+
         elif role == GroupsModel.model:
             return model
+
+        elif role == GroupsModel.selected:
+            return selected
 
     def export(self, workbook):
         """Export the model to an excel spreadsheet
@@ -87,15 +98,15 @@ class GroupsModel(QtCore.QAbstractListModel):
         workbook.create_sheet('groups')
         worksheet = workbook.get_sheet_by_name('groups')
 
-        for i, (group, model, _) in enumerate(self._groups):
+        for i, (group, samples_per_group_model, _) in enumerate(self._groups):
             worksheet.cell(row=1, column=i+1).value = group
-            for j, sample in enumerate(model.samples):
+            for j, sample in enumerate(samples_per_group_model.items):
                 worksheet.cell(row=j+2, column=i+1).value = sample
 
         workbook.create_sheet('statistics')
         worksheet = workbook.get_sheet_by_name('statistics')
 
-        statistics = self.get_statistics(selected_only=False)
+        statistics = self.get_statistics(selected_groups=None)
 
         for i, (gene, statistics_per_gene) in enumerate(statistics.items()):
             worksheet.cell(row=5*i+1, column=1).value = gene
@@ -119,7 +130,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         return QtCore.Qt.ItemIsUserCheckable | default_flags
 
-    def get_statistics(self, selected_only=False):
+    def get_statistics(self, selected_groups=None):
         """Returns the mean, error and number of samples for each selected group and gene.
 
         Args:
@@ -129,10 +140,15 @@ class GroupsModel(QtCore.QAbstractListModel):
             collections.OrderedDict: a mapping betweeb the name of the gene and a pandas.DataFrame storing the mean, error and number of value for each selected group
         """
 
-        if selected_only:
-            selected_groups = [(group, model) for group, model, selected in self._groups if selected]
-        else:
+        if selected_groups is None:
             selected_groups = [(group, model) for group, model, _ in self._groups]
+        else:
+            model_per_group = dict([(group, model) for group, model, _ in self._groups])
+            temp = []
+            for group in selected_groups:
+                if group in model_per_group:
+                    temp.append((group, model_per_group[group]))
+            selected_groups = temp
 
         if not selected_groups:
             logging.error('No group selected for getting statistics')
@@ -146,12 +162,11 @@ class GroupsModel(QtCore.QAbstractListModel):
 
             statistics_per_gene = pd.DataFrame(np.nan, index=['mean', 'stddev', 'n'], columns=[group for group, _ in selected_groups])
 
-            for group, model in selected_groups:
+            for group, samples_per_group_model in selected_groups:
 
                 values = []
-                for sample in model.samples:
+                for sample in samples_per_group_model.items:
                     values.extend(self._dynamic_matrix.loc[gene, sample])
-
                 if values:
                     mean = np.mean(values)
                     stddev = np.std(values)
@@ -166,6 +181,28 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         return statistics
 
+    @property
+    def groups(self):
+        """Return the groups.
+
+        Returns:
+            list of 3-tuples: the groups
+        """
+
+        return self._groups
+
+    def is_selected(self, index):
+        """Return true if the group with given index is selected.
+
+        Args:
+            index (int): the index of the group
+        """
+
+        if index < 0 or index >= len(self._groups):
+            return False
+
+        return self._groups[index][2]
+
     def load_groups(self, groups):
         """Reset the model and load groups.
 
@@ -178,11 +215,11 @@ class GroupsModel(QtCore.QAbstractListModel):
         for group in groups.columns:
             samples = groups[group].dropna()
 
-            group_contents_model = SamplesPerGroupModel()
+            samples_per_group_model = DroppableModel()
             for sample in samples:
-                group_contents_model.add_sample(sample)
+                samples_per_group_model.add_item(sample)
 
-            self._groups.append((group, group_contents_model, True))
+            self._groups.append([group, samples_per_group_model, True])
 
         self.layoutChanged.emit()
 
@@ -236,15 +273,18 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         student_test_per_gene = collections.OrderedDict()
 
+        selected_groups = [(group, samples_per_group_model) for group, samples_per_group_model, selected in self._groups if selected]
+
+        selected_group_names = [group[0] for group in selected_groups]
+
         # Loop over the gene and perform the student test for this gene
         for gene in self._dynamic_matrix.index:
             df = pd.DataFrame(columns=['groups', 'means'])
-            for group, model, selected in self._groups:
+            for group, samples_per_group_model in selected_groups:
 
-                if not selected:
-                    continue
-
-                for sample in model.samples:
+                for sample in samples_per_group_model.items:
+                    if not self._dynamic_matrix.loc[gene, sample]:
+                        continue
                     mean = np.mean(self._dynamic_matrix.loc[gene, sample])
                     row = pd.DataFrame([[group, mean]], columns=['groups', 'means'])
                     df = pd.concat([df, row])
@@ -259,9 +299,48 @@ class GroupsModel(QtCore.QAbstractListModel):
                     student_test_per_gene[gene] = sk.posthoc_ttest(df, val_col='means', group_col='groups', p_adjust='holm')
                 except:
                     logging.error('Can not compute student test for gene {}. Skip it.'.format(gene))
+                    student_test_per_gene[gene] = pd.DataFrame(np.nan, index=selected_group_names, columns=selected_group_names)
                     continue
 
             else:
                 logging.warning('No group selected for student test for gene {}'.format(gene))
 
         return student_test_per_gene
+
+    @property
+    def group_control(self):
+
+        return self._group_control
+
+    @group_control.setter
+    def group_control(self, index):
+        """Set the group control.
+
+        Args:
+            index (int): the index of the group control
+        """
+
+        if index < 0 or index >= self.rowCount():
+            return
+
+        self._group_control = index
+
+        self.layoutChanged.emit()
+
+    def setData(self, index, value, role):
+        """Set the data for a given index and given role.
+
+        Args:
+            value (QtCore.QVariant): the data
+        """
+
+        if not index.isValid():
+            return QtCore.QVariant()
+
+        row = index.row()
+
+        if role == QtCore.Qt.CheckStateRole:
+            self._groups[row][2] = True if value == QtCore.Qt.Checked else False
+            return True
+
+        return super(GroupsModel, self).setData(index, value, role)

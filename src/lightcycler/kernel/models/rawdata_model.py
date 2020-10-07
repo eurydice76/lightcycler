@@ -253,6 +253,18 @@ class RawDataModel(QtCore.QAbstractTableModel):
         return len(self._rawdata.index)
 
     @property
+    def genes(self):
+        """Return the samples names stored in the raw data.
+
+        Returns:
+            list of str: the sample names
+        """
+
+        genes = list(collections.OrderedDict.fromkeys(self._rawdata['Gene']))
+
+        return genes
+
+    @property
     def samples(self):
         """Return the samples names stored in the raw data.
 

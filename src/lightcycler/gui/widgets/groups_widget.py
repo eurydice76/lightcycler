@@ -5,8 +5,8 @@ from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.gui.dialogs.means_and_errors_dialog import MeansAndErrorsDialog
 from lightcycler.gui.dialogs.group_contents_dialog import GroupContentsDialog
+from lightcycler.gui.views.droppable_listview import DroppableListView
 from lightcycler.gui.views.groups_listview import GroupsListView
-from lightcycler.gui.views.samples_per_group_listview import SamplesPerGroupListView
 from lightcycler.kernel.models.available_samples_model import AvailableSamplesModel
 from lightcycler.kernel.models.groups_model import GroupsModel
 from lightcycler.kernel.models.pvalues_data_model import PValuesDataModel
@@ -83,7 +83,7 @@ class GroupsWidget(QtWidgets.QWidget):
         self._groups_listview.setSelectionMode(QtWidgets.QListView.SingleSelection)
         self._groups_listview.setModel(GroupsModel(self))
 
-        self._samples_per_group_listview = SamplesPerGroupListView(None, self)
+        self._samples_per_group_listview = DroppableListView(None, self)
         self._samples_per_group_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._samples_per_group_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
 
@@ -158,6 +158,22 @@ class GroupsWidget(QtWidgets.QWidget):
 
         dialog.show()
 
+    def on_clear(self):
+        """Event handler which resets all the groups defined so far.
+        """
+
+        samples_model = self._available_samples_listview.model()
+        if samples_model is not None:
+            samples_model.reset()
+
+        groups_model = self._groups_listview.model()
+        if groups_model is not None:
+            groups_model.clear()
+
+        samples_per_group_model = self._samples_per_group_listview.model()
+        if samples_per_group_model is not None:
+            samples_per_group_model.clear()
+
     def on_load_groups(self, samples, groups):
         """Event handler which loads sent rawdata model to the widget tableview.
         """
@@ -167,30 +183,14 @@ class GroupsWidget(QtWidgets.QWidget):
 
         filtered_samples = [sample for sample in samples if sample in groups.values]
 
-        samples_model = AvailableSamplesModel()
-        samples_model.samples = samples
+        available_samples_model = AvailableSamplesModel(self)
+        available_samples_model.samples = samples
 
-        self._available_samples_listview.setModel(samples_model)
+        self._available_samples_listview.setModel(available_samples_model)
 
-        samples_model.remove_samples(filtered_samples)
+        available_samples_model.remove_items(filtered_samples)
 
-        self._samples_per_group_listview.set_samples_model(samples_model)
-
-    def on_clear(self):
-        """Event handler which resets all the groups defined so far.
-        """
-
-        samples_model = self._available_samples_listview.model()
-        if samples_model is not None:
-            samples_model.clear()
-
-        groups_model = self._groups_listview.model()
-        if groups_model is not None:
-            groups_model.clear()
-
-        samples_per_group_model = self._samples_per_group_listview.model()
-        if samples_per_group_model is not None:
-            samples_per_group_model.clear()
+        self._samples_per_group_listview.set_source_model(available_samples_model)
 
     def on_run_student_test(self):
         """Event handler which will performs pairwise student test on the groups defined so far.
@@ -203,7 +203,9 @@ class GroupsWidget(QtWidgets.QWidget):
         self._selected_gene_combobox.clear()
         self._selected_gene_combobox.addItems(self._student_test_per_gene.keys())
 
-        statistics = groups_model.get_statistics(selected_only=True)
+        selected_groups = [group[0] for group in groups_model.groups if group[2]]
+
+        statistics = groups_model.get_statistics(selected_groups=selected_groups)
         if statistics is None:
             return
 
@@ -241,7 +243,9 @@ class GroupsWidget(QtWidgets.QWidget):
 
     def on_set_available_samples(self, samples):
 
-        available_sample_model = AvailableSamplesModel(self)
-        available_sample_model.samples = samples
+        available_samples_model = AvailableSamplesModel(self)
+        available_samples_model.samples = samples
 
-        self._available_samples_listview.setModel(available_sample_model)
+        self._available_samples_listview.setModel(available_samples_model)
+
+        self._samples_per_group_listview.set_source_model(available_samples_model)
