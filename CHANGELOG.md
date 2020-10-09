@@ -1,3 +1,7 @@
+version 0.0.4
+--------------
+* UPDATED reduced size of the bundle
+
 version 0.0.3
 --------------
 * FIXED   typo in build_app.bat
