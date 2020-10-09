@@ -1,4 +1,7 @@
 @echo off
+
+set current_dir=%cd%
+
 rem the path to the python installer executable
 set python_installer=%1
 
@@ -18,13 +21,13 @@ rem create the target directory that will contains the python installation
 mkdir %target_dir%
 
 rem uninstall python
-%python_installer% /quiet / uninstall
+%python_installer% /quiet /uninstall
 
 rem install python to the select target directory
 %python_installer% /quiet TargetDir=%target_dir%
 
 rem the path to pip executable
-set pip_exe = %target_dir%\Scripts\pip.exe
+set pip_exe=%target_dir%\Scripts\pip.exe
 
 rem install dependencies
 %pip_exe% install numpy
@@ -43,11 +46,10 @@ set python_exe=%target_dir%\python.exe
 rem cleanup previous installations
 cd %target_dir%\Lib\site-packages
 for /f %%i in ('dir /a:d /S /B lightcycler*') do rmdir /S /Q %%i
-if exist %target_dir%\Scripts\lightcycler(
-    del /Q %target_dir%\Scripts\lightcycler
-)
+del /Q %target_dir%\Scripts\lightcycler
 
 rem checkout selected version of the lightcycler project
+set git_exe="C:\Program Files\Git\bin\git.exe"
 cd %lightcycler_git_dir%
 %git_exe% fetch --all
 %git_exe% checkout %lightcycler_version%
