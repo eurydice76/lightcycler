@@ -14,14 +14,14 @@ set lightcycler_version=%3
 rem the directory that will contain the python + deps + lightcycler
 set target_dir=%4
 
+rem uninstall python
+%python_installer% /quiet /uninstall
+
 rem remove(if existing) target directory
 rmdir /S /Q %target_dir%
 
 rem create the target directory that will contains the python installation
 mkdir %target_dir%
-
-rem uninstall python
-%python_installer% /quiet /uninstall
 
 rem install python to the select target directory
 %python_installer% /quiet TargetDir=%target_dir%
@@ -59,8 +59,8 @@ rmdir /S /Q %lightcycler_git_dir%\build
 %python_exe% setup.py build install
 
 rem copy the LICENSE and CHANGELOG files
-copy LICENSE %lightcycler_git_dir%\deploy\windows
-copy CHANGELOG %lightcycler_git_dir%\deploy\windows\CHANGELOG.txt
+copy %lightcycler_git_dir%\LICENSE %lightcycler_git_dir%\deploy\windows
+copy %lightcycler_git_dir%\CHANGELOG.md %lightcycler_git_dir%\deploy\windows\CHANGELOG.txt
 
 rem the path to nsis executable
 set makensis="C:\Program Files (x86)\NSIS\Bin\makensis.exe"
