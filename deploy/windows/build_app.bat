@@ -41,7 +41,6 @@ rem install dependencies
 %pip_exe% install xlrd
 
 rem remove unused file for the bundle to reduce its size
-rmdir /S /Q %target_dir%\Lib\site-packages\PyQt5\Qt
 rmdir /S /Q %target_dir%\Lib\site-packages\matplotlib\tests
 rmdir /S /Q %target_dir%\Lib\site-packages\numpy\tests
 rmdir /S /Q %target_dir%\Lib\site-packages\pandas\tests

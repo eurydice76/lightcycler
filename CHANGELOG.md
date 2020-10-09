@@ -1,3 +1,7 @@
+version 0.0.6
+--------------
+* UPDATED added back the PyQt5/Qt directory to the bundle
+
 version 0.0.5
 --------------
 * UPDATED reduced size of the bundle
