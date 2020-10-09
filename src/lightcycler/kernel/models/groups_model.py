@@ -9,6 +9,8 @@ import pandas as pd
 
 import numpy as np
 
+import scipy.stats as stats
+
 import scikit_posthocs as sk
 
 from lightcycler.kernel.models.droppable_model import DroppableModel
@@ -50,6 +52,59 @@ class GroupsModel(QtCore.QAbstractListModel):
     def clear(self):
 
         self.reset()
+
+    def compute_ct_matrix(self):
+        """Compute the so-called CT matrix
+        """
+
+        if self._group_control == -1:
+            logging.info('No group control set')
+            return None
+
+        group_control = self._groups[self._group_control][0]
+
+        # Compute the statistics, especially the mean, for each gene of the group control.
+        statistics = self.get_statistics(selected_groups=[group_control])
+
+        average_matrix = pd.DataFrame(np.nan, index=self._dynamic_matrix.index, columns=self._dynamic_matrix.columns)
+
+        for gene in average_matrix.index:
+            if gene in statistics:
+                average_matrix.loc[gene, :] = statistics[gene].loc['mean', group_control]
+            else:
+                average_matrix.loc[gene, :] = np.nan
+
+        means = pd.DataFrame(np.nan, index=self._dynamic_matrix.index, columns=self._dynamic_matrix.columns)
+
+        for i in range(len(self._dynamic_matrix.index)):
+            for j in range(len(self._dynamic_matrix.columns)):
+                if self._dynamic_matrix.iloc[i, j]:
+                    means.iloc[i, j] = np.mean(self._dynamic_matrix.iloc[i, j])
+
+        ct_matrix = average_matrix - means
+
+        ct_matrix = pow(2, ct_matrix)
+
+        ct_matrix = ct_matrix.round(3)
+
+        return ct_matrix
+
+    def compute_geometric_means(self, reference_genes):
+        """Compute the geometric mean for each sample across given reference genes.
+        """
+
+        means = pd.DataFrame(np.nan, index=self._dynamic_matrix.index, columns=self._dynamic_matrix.columns)
+
+        for i in range(len(self._dynamic_matrix.index)):
+            for j in range(len(self._dynamic_matrix.columns)):
+                if self._dynamic_matrix.iloc[i, j]:
+                    means.iloc[i, j] = np.mean(self._dynamic_matrix.iloc[i, j])
+
+        geom_means = stats.gmean(means.loc[reference_genes, :], axis=0)
+
+        geom_means = pd.DataFrame([geom_means], index=['gmean'], columns=means.columns)
+
+        return geom_means
 
     def data(self, index, role):
         """Get the data at a given index for a given role.
@@ -182,6 +237,26 @@ class GroupsModel(QtCore.QAbstractListModel):
         return statistics
 
     @property
+    def group_control(self):
+
+        return self._group_control
+
+    @group_control.setter
+    def group_control(self, index):
+        """Set the group control.
+
+        Args:
+            index (int): the index of the group control
+        """
+
+        if index < 0 or index >= self.rowCount():
+            return
+
+        self._group_control = index
+
+        self.layoutChanged.emit()
+
+    @property
     def groups(self):
         """Return the groups.
 
@@ -306,26 +381,6 @@ class GroupsModel(QtCore.QAbstractListModel):
                 logging.warning('No group selected for student test for gene {}'.format(gene))
 
         return student_test_per_gene
-
-    @property
-    def group_control(self):
-
-        return self._group_control
-
-    @group_control.setter
-    def group_control(self, index):
-        """Set the group control.
-
-        Args:
-            index (int): the index of the group control
-        """
-
-        if index < 0 or index >= self.rowCount():
-            return
-
-        self._group_control = index
-
-        self.layoutChanged.emit()
 
     def setData(self, index, value, role):
         """Set the data for a given index and given role.

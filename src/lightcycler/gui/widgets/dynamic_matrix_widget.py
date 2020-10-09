@@ -2,6 +2,7 @@ import logging
 
 from PyQt5 import QtWidgets
 
+from lightcycler.gui.views.copy_pastable_tableview import CopyPastableTableView
 from lightcycler.kernel.models.dynamic_matrix_model import DynamicMatrixModel
 
 
@@ -46,7 +47,7 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
         self._view_combobox = QtWidgets.QComboBox()
         self._view_combobox.addItems(['means', 'stdevs', 'number of values'])
 
-        self._dynamic_matrix_tableview = QtWidgets.QTableView()
+        self._dynamic_matrix_tableview = CopyPastableTableView(delimiter='\n')
         dynamic_matrix_model = DynamicMatrixModel()
         self._dynamic_matrix_tableview.setModel(dynamic_matrix_model)
 

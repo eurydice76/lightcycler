@@ -57,6 +57,8 @@ class QTextEditLogger(logging.Handler):
 
         msg = self.format(record)
         self._widget.appendPlainText(msg)
+        # Will act as a flush
+        self._widget.repaint()
 
     @property
     def widget(self):

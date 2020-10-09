@@ -253,7 +253,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # In case of an import clear the data before.
         self.clear_data.emit()
 
-        logging.info('Importing {} file. Please wait.'.format(excel_file))
+        logging.info('Importing {} file. Please wait ...'.format(excel_file))
 
         rawdata = pd.read_excel(excel_file, sheet_name='raw data')
 
@@ -264,9 +264,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_groups.emit(rawdata_model.samples, groups)
 
         genes_per_group = pd.read_excel(excel_file, sheet_name='genes')
+
         self.load_genes.emit(rawdata_model.genes, genes_per_group)
 
-        logging.info('Successfully imported {} file'.format(excel_file))
+        logging.info('... successfully imported {} file'.format(excel_file))
 
     def on_open_lightcycler_files(self):
         """Event handler which loads several lightcycler files.
@@ -327,6 +328,16 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.reset_data.emit()
+
+    @ property
+    def groups_widget(self):
+        """Returns the groups widget.
+
+        Returns:
+            lightcycler.gui.widgets.groups_widget.GroupsWidget: the widget
+        """
+
+        return self._groups_widget
 
     @ property
     def rawdata_widget(self):

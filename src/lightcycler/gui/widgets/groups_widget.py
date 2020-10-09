@@ -5,6 +5,7 @@ from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.gui.dialogs.means_and_errors_dialog import MeansAndErrorsDialog
 from lightcycler.gui.dialogs.group_contents_dialog import GroupContentsDialog
+from lightcycler.gui.views.copy_pastable_tableview import CopyPastableTableView
 from lightcycler.gui.views.droppable_listview import DroppableListView
 from lightcycler.gui.views.groups_listview import GroupsListView
 from lightcycler.kernel.models.available_samples_model import AvailableSamplesModel
@@ -96,7 +97,7 @@ class GroupsWidget(QtWidgets.QWidget):
         self._selected_gene_label = QtWidgets.QLabel('Selected gene')
         self._selected_gene_combobox = QtWidgets.QComboBox()
 
-        self._student_test_tableview = QtWidgets.QTableView()
+        self._student_test_tableview = CopyPastableTableView(delimiter=',')
 
     def _init_ui(self):
         """Initialize the ui.
@@ -118,6 +119,11 @@ class GroupsWidget(QtWidgets.QWidget):
             return
 
         model.export(workbook)
+
+    @property
+    def groups_listview(self):
+
+        return self._groups_listview
 
     def model(self):
         """Returns the underlying model.

@@ -92,7 +92,7 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         elif role == QtCore.Qt.BackgroundRole:
 
             if np.isnan(values.iloc[row, col]):
-                return QtGui.QBrush(QtCore.Qt.red)
+                return QtGui.QBrush(QtGui.QColor(255, 85, 51))
             else:
                 min_value = np.nanmin(values)
                 max_value = np.nanmax(values)
