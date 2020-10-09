@@ -45,6 +45,23 @@ rmdir /S /Q %target_dir%\Lib\site-packages\PyQt5\Qt
 rmdir /S /Q %target_dir%\Lib\site-packages\matplotlib\tests
 rmdir /S /Q %target_dir%\Lib\site-packages\numpy\tests
 rmdir /S /Q %target_dir%\Lib\site-packages\pandas\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\cluster\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\constants\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\fft\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\fftpack\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\integrate\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\interpolate\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\io\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\linalg\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\misc\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\ndimage\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\odr\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\optimize\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\signal\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\sparse\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\spatial\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\special\tests
+rmdir /S /Q %target_dir%\Lib\site-packages\scipy\stats\tests
 
 rem the path to python executable
 set python_exe=%target_dir%\python.exe

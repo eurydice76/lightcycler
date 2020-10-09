@@ -1,3 +1,7 @@
+version 0.0.5
+--------------
+* UPDATED reduced size of the bundle
+
 version 0.0.4
 --------------
 * UPDATED reduced size of the bundle
