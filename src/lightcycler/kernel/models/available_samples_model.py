@@ -67,6 +67,7 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
             except ValueError:
                 continue
 
+        indexes.sort()
         indexes.reverse()
 
         for idx in indexes:
@@ -95,7 +96,7 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
     @samples.setter
     def samples(self, samples):
 
-        self._samples = samples
+        self._samples = sorted(samples)
 
         self._samples_default = copy.copy(samples)
 

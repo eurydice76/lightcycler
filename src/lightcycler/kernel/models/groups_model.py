@@ -89,16 +89,16 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         return ct_matrix
 
-    def compute_geometric_means(self, reference_genes):
+    def compute_geometric_means(self, ct_matrix, reference_genes):
         """Compute the geometric mean for each sample across given reference genes.
         """
 
-        means = pd.DataFrame(np.nan, index=self._dynamic_matrix.index, columns=self._dynamic_matrix.columns)
+        means = pd.DataFrame(np.nan, index=ct_matrix.index, columns=ct_matrix.columns)
 
-        for i in range(len(self._dynamic_matrix.index)):
-            for j in range(len(self._dynamic_matrix.columns)):
-                if self._dynamic_matrix.iloc[i, j]:
-                    means.iloc[i, j] = np.mean(self._dynamic_matrix.iloc[i, j])
+        for i in range(len(ct_matrix.index)):
+            for j in range(len(ct_matrix.columns)):
+                if ct_matrix.iloc[i, j]:
+                    means.iloc[i, j] = np.mean(ct_matrix.iloc[i, j])
 
         geom_means = stats.gmean(means.loc[reference_genes, :], axis=0)
 
@@ -162,6 +162,8 @@ class GroupsModel(QtCore.QAbstractListModel):
         worksheet = workbook.get_sheet_by_name('statistics')
 
         statistics = self.get_statistics(selected_groups=None)
+        if statistics is None:
+            return
 
         for i, (gene, statistics_per_gene) in enumerate(statistics.items()):
             worksheet.cell(row=5*i+1, column=1).value = gene

@@ -247,7 +247,7 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
         genes = list(collections.OrderedDict.fromkeys(rawdata['Gene']))
 
-        samples = list(collections.OrderedDict.fromkeys(rawdata['Name']))
+        samples = sorted(list(collections.OrderedDict.fromkeys(rawdata['Name'])))
 
         self._dynamic_matrix = pd.DataFrame(None, index=genes, columns=samples)
         for row in self._dynamic_matrix.index:

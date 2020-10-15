@@ -122,7 +122,7 @@ class GenesWidget(QtWidgets.QWidget):
 
         ct_matrix_model.set_ct_matrix(ct_matrix)
 
-        geom_means = groups_model.compute_geometric_means(reference_genes)
+        geom_means = groups_model.compute_geometric_means(ct_matrix, reference_genes)
 
         rq_matrix = ct_matrix.loc[interest_genes]/geom_means.values
 

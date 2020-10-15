@@ -43,7 +43,7 @@ class PValuesDataModel(ExportableDataModel):
                 row = index.row()
                 column = index.column()
                 p_value = self._data.iloc[row, column]
-                if p_value < 0.05 and p_value > 0:
+                if p_value < 0.05:
                     return QtGui.QBrush(QtCore.Qt.red)
 
         return None
