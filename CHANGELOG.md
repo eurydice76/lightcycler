@@ -1,3 +1,8 @@
+version 0.0.7
+--------------
+* ADDED   the rq matrix statistics is now exportable
+* FIXED   buggy RQ matrix computation
+
 version 0.0.6
 --------------
 * UPDATED added back the PyQt5/Qt directory to the bundle
