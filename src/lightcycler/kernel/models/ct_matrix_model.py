@@ -84,7 +84,13 @@ class CTMatrixModel(QtCore.QAbstractTableModel):
 
         return len(self._ct_matrix.index)
 
-    def set_ct_matrix(self, ct_matrix):
+    @property
+    def ct_matrix(self):
+
+        return self._ct_matrix
+
+    @ct_matrix.setter
+    def ct_matrix(self, ct_matrix):
 
         self._ct_matrix = ct_matrix
         self.layoutChanged.emit()

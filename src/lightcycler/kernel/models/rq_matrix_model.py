@@ -69,7 +69,13 @@ class RQMatrixModel(QtCore.QAbstractTableModel):
 
         return len(self._rq_matrix.index)
 
-    def set_rq_matrix(self, ct_matrix):
+    @property
+    def rq_matrix(self):
 
-        self._rq_matrix = ct_matrix
+        return self._rq_matrix
+
+    @rq_matrix.setter
+    def rq_matrix(self, rq_matrix):
+
+        self._rq_matrix = rq_matrix
         self.layoutChanged.emit()

@@ -158,8 +158,8 @@ class GroupsModel(QtCore.QAbstractListModel):
             for j, sample in enumerate(samples_per_group_model.items):
                 worksheet.cell(row=j+2, column=i+1).value = sample
 
-        workbook.create_sheet('statistics')
-        worksheet = workbook.get_sheet_by_name('statistics')
+        workbook.create_sheet('statistics-cp')
+        worksheet = workbook.get_sheet_by_name('statistics-cp')
 
         statistics = self.get_statistics(selected_groups=None)
         if statistics is None:

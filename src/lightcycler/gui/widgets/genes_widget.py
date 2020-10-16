@@ -7,6 +7,7 @@ from lightcycler.gui.widgets.ct_matrix_widget import CTMatrixWidget
 from lightcycler.gui.widgets.rq_matrix_widget import RQMatrixWidget
 from lightcycler.kernel.models.available_genes_model import AvailableGenesModel
 from lightcycler.kernel.models.droppable_model import DroppableModel
+from lightcycler.kernel.models.genes_model import GenesModel
 
 
 class GenesWidget(QtWidgets.QWidget):
@@ -16,6 +17,8 @@ class GenesWidget(QtWidgets.QWidget):
         super(GenesWidget, self).__init__(main_window, *args, **kwargs)
 
         self._main_window = main_window
+
+        self._genes_model = None
 
         self._init_ui()
 
@@ -88,50 +91,28 @@ class GenesWidget(QtWidgets.QWidget):
         self._build_layout()
         self._build_events()
 
+        groups_model = self._main_window.groups_widget.model()
+        ct_matrix_model = self._ct_matrix_widget.model()
+        rq_matrix_model = self._rq_matrix_widget.model()
+        reference_genes_model = self._reference_genes_listview.model()
+        interest_genes_model = self._interest_genes_listview.model()
+
+        self._genes_model = GenesModel(groups_model, ct_matrix_model, rq_matrix_model, reference_genes_model, interest_genes_model)
+
+    def model(self):
+        """Returns the underlying composite model.
+
+        Returns:
+            lightcycler.kernel.models.genes_model.GenesModel
+        """
+
+        return self._genes_model
+
     def on_compute_rq_matrix(self):
         """Compute the RQ matrix.
         """
 
-        groups_model = self._main_window.groups_widget.groups_listview.model()
-        if groups_model is None:
-            return
-
-        reference_genes_model = self._reference_genes_listview.model()
-        reference_genes = [reference_genes_model.data(reference_genes_model.index(i, 0), QtCore.Qt.DisplayRole)
-                           for i in range(reference_genes_model.rowCount())]
-        if not reference_genes:
-            logging.info('No genes of reference defined')
-            return
-
-        interest_genes_model = self._interest_genes_listview.model()
-        interest_genes = [interest_genes_model.data(interest_genes_model.index(i, 0), QtCore.Qt.DisplayRole)
-                          for i in range(interest_genes_model.rowCount())]
-        if not interest_genes:
-            logging.info('No genes of interest defined')
-            return
-
-        logging.info('Computing RQ matrix. Please wait ...')
-        ct_matrix = groups_model.compute_ct_matrix()
-        if ct_matrix is None:
-            return
-
-        ct_matrix_model = self._ct_matrix_widget.model()
-
-        ct_matrix_model.set_reference_genes(reference_genes)
-        ct_matrix_model.set_interest_genes(interest_genes)
-
-        ct_matrix_model.set_ct_matrix(ct_matrix)
-
-        geom_means = groups_model.compute_geometric_means(ct_matrix, reference_genes)
-
-        rq_matrix = ct_matrix.loc[interest_genes]/geom_means.values
-
-        rq_matrix = rq_matrix.round(3)
-
-        rq_matrix_model = self._rq_matrix_widget.model()
-        rq_matrix_model.set_rq_matrix(rq_matrix)
-
-        logging.info('.. done')
+        self._genes_model.compute_rq_matrix()
 
     def export(self, workbook):
         """Event handler which export the raw data to an excel spreadsheet.
@@ -140,19 +121,7 @@ class GenesWidget(QtWidgets.QWidget):
             workbook (openpyxl.workbook.workbook.Workbook): the workbook
         """
 
-        workbook.create_sheet('genes')
-        worksheet = workbook.get_sheet_by_name('genes')
-
-        worksheet.cell(row=1, column=1).value = 'reference'
-        worksheet.cell(row=1, column=2).value = 'interest'
-
-        reference_genes_model = self._reference_genes_listview.model()
-        for i, item in enumerate(reference_genes_model.items):
-            worksheet.cell(row=i+2, column=1).value = item
-
-        interest_genes_model = self._interest_genes_listview.model()
-        for i, item in enumerate(interest_genes_model.items):
-            worksheet.cell(row=i+2, column=2).value = item
+        self._genes_model.export(workbook)
 
     def on_clear(self):
         """Event handler which resets all the groups defined so far.
