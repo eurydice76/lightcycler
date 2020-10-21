@@ -117,7 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         exit_action = QtWidgets.QAction('&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
-        exit_action.setStatusTip('Exit pigcel')
+        exit_action.setStatusTip('Exit lightcycler')
         exit_action.triggered.connect(self.on_quit_application)
         file_menu.addAction(exit_action)
 

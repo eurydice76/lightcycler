@@ -1,3 +1,7 @@
+version 0.0.8
+--------------
+* ADDED   csv files can now be loaded
+
 version 0.0.7
 --------------
 * ADDED   the rq matrix statistics is now exportable

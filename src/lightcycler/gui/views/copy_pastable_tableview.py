@@ -60,7 +60,7 @@ class _CopyFilter(QtCore.QObject):
         """Event filter when the user press Ctrl-C on a copy-pastable table view.
 
         Args:
-            source (pigcel.gui.widgets.copy_pastable_tableview.CopyPastableTableView): the table view
+            source (lightcycler.gui.widgets.copy_pastable_tableview.CopyPastableTableView): the table view
             event (PyQt5.QtCore.QEvent): the event 
         """
 
