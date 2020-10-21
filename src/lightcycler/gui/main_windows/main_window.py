@@ -274,24 +274,24 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         # Pop up a file browser for selecting the workbooks
-        pdf_files = QtWidgets.QFileDialog.getOpenFileNames(self, 'Open data files', '', 'Data Files (*.pdf *.PDF)')[0]
-        if not pdf_files:
+        data_files = QtWidgets.QFileDialog.getOpenFileNames(self, 'Open data files', '', 'Data Files (*.pdf *.PDF *.csv)')[0]
+        if not data_files:
             return
 
-        n_pdf_files = len(pdf_files)
-        progress_bar.reset(n_pdf_files)
+        n_data_files = len(data_files)
+        progress_bar.reset(n_data_files)
 
         n_loaded_files = 0
 
         rawdata_model = self._rawdata_widget.model()
 
         # Loop over the pig directories
-        for progress, pdf_file in enumerate(pdf_files):
+        for progress, data_file in enumerate(data_files):
 
             # Read the pdf file and add the data to the model. Any kind of error must be caught here.
             try:
-                self.statusBar().showMessage('Reading {} file ...'.format(pdf_file))
-                rawdata_model.add_data(pdf_file, sort=False)
+                self.statusBar().showMessage('Reading {} file ...'.format(data_file))
+                rawdata_model.add_data(data_file, sort=False)
 
             except Exception as error:
                 logging.error(str(error))
@@ -301,13 +301,16 @@ class MainWindow(QtWidgets.QMainWindow):
             progress_bar.update(progress+1)
 
         self.statusBar().showMessage('')
-        logging.info('Loaded successfully {} files out of {}'.format(n_loaded_files, n_pdf_files))
+        logging.info('Loaded successfully {} files out of {}'.format(n_loaded_files, n_data_files))
 
         # Sort the model.
         try:
             rawdata_model.sort()
         except RawDataError:
             pass
+
+        if rawdata_model.rowCount() == 0:
+            return
 
         rawdata_model.update_dynamic_matrix.emit(rawdata_model)
 

@@ -1,5 +1,6 @@
 import collections
 import copy
+import csv
 import logging
 import os
 import re
@@ -34,17 +35,18 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self._rawdata_default = copy.copy(self._rawdata)
 
-    def add_data(self, pdf_file, sort=False):
-        """Add new data to the model.
+    def read_pdf_file(self, pdf_file):
+        """Read a PDF data file.
 
         Args:
-            data (pandas.DataFrame): the data
+            pdf_file: the pdf file
         """
 
-        basename = os.path.basename(pdf_file)
+        filename, _ = os.path.splitext(pdf_file)
 
-        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(1|2|3|1-2))_(\w+).PDF', basename)
+        basename = os.path.basename(filename)
 
+        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(1|2|3|1-2))_(\w+)', basename)
         if match is None:
             raise IOError('Invalid filename')
 
@@ -78,8 +80,74 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         data_frame['Date'] = pd.to_datetime(data_frame['Date'])
         data_frame['CP'] = data_frame['CP'].str.replace(',', '.').astype(np.float)
+        print(data_frame)
 
         self._rawdata = pd.concat([self._rawdata, data_frame])
+
+    def read_csv_file(self, csv_file):
+        """Read a csv data file.
+
+        Args:
+            csv_file: the csv file
+        """
+
+        filename, ext = os.path.splitext(csv_file)
+
+        basename = os.path.basename(filename)
+
+        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(1|2|3|1-2))_(\w+)', basename)
+        if match is None:
+            raise IOError('Invalid filename')
+
+        date, rt, _, gene = match.groups()
+
+        fin = open(csv_file, 'r')
+        data = fin.readlines()
+        fin.close()
+
+        # Skip the first two lines
+        _ = data.pop(0)
+        _ = data.pop(0)
+
+        reader = csv.reader(data, delimiter='\t')
+
+        data_frame = pd.DataFrame(columns=['Date', 'Gene', 'RT', 'Pos', 'Name', 'CP', 'File'])
+
+        for row in reader:
+            line = {}
+            line['Date'] = [date]
+            line['Gene'] = [gene]
+            line['RT'] = [rt]
+            line['Pos'] = [row[2]]
+            line['Name'] = [' '.join(row[3].split()[1:]).strip()]
+            cp = float(row[4].replace(',', '.')) if row[4].strip() else np.nan
+            line['CP'] = [cp]
+            line['File'] = [basename]
+            data_frame = pd.concat([data_frame, pd.DataFrame.from_dict(line)])
+
+        data_frame['Date'] = pd.to_datetime(data_frame['Date'])
+
+        data_frame.reset_index(drop=True, inplace=True)
+
+        self._rawdata = pd.concat([self._rawdata, data_frame])
+
+    _readers = {'.pdf': read_pdf_file, '.csv': read_csv_file}
+
+    def add_data(self, data_file, sort=False):
+        """Add new data to the model.
+
+        Args:
+            data (pandas.DataFrame): the data
+        """
+
+        _, ext = os.path.splitext(data_file)
+        ext = ext.lower()
+
+        try:
+            self._readers[ext](self, data_file)
+        except KeyError:
+            logging.error('Unknown extension for data file {}'.format(data_file))
+            return
 
         if sort:
             self.sort()
@@ -170,7 +238,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         return matches[index]
 
-    @property
+    @ property
     def rawdata(self):
         """Return the raw data.
 
@@ -180,7 +248,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         return self._rawdata
 
-    @rawdata.setter
+    @ rawdata.setter
     def rawdata(self, rawdata):
         """Setter for rawdata.
 
@@ -252,7 +320,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         return len(self._rawdata.index)
 
-    @property
+    @ property
     def genes(self):
         """Return the samples names stored in the raw data.
 
@@ -264,7 +332,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         return genes
 
-    @property
+    @ property
     def samples(self):
         """Return the samples names stored in the raw data.
 
