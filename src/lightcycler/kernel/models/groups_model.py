@@ -155,7 +155,9 @@ class GroupsModel(QtCore.QAbstractListModel):
         workbook.create_sheet('groups')
         worksheet = workbook.get_sheet_by_name('groups')
 
-        for i, (group, samples_per_group_model, _) in enumerate(self._groups):
+        sorted_groups = sorted(self._groups, key=lambda x: x[0])
+
+        for i, (group, samples_per_group_model, _) in enumerate(sorted_groups):
             worksheet.cell(row=1, column=i+1).value = group
             for j, sample in enumerate(samples_per_group_model.items):
                 worksheet.cell(row=j+2, column=i+1).value = sample
@@ -163,7 +165,7 @@ class GroupsModel(QtCore.QAbstractListModel):
         workbook.create_sheet('statistics-cp')
         worksheet = workbook.get_sheet_by_name('statistics-cp')
 
-        statistics = self.get_statistics(selected_groups=None)
+        statistics = self.get_statistics(selected_groups=[v[0] for v in sorted_groups])
         if statistics is None:
             return
 
@@ -193,7 +195,7 @@ class GroupsModel(QtCore.QAbstractListModel):
         """Returns the mean, error and number of samples for each selected group and gene.
 
         Args:
-            selected_only (bool): if True will coonsider only the selected groups
+            selected_groups (list of str): list of selected groups
 
         Returns:
             collections.OrderedDict: a mapping betweeb the name of the gene and a pandas.DataFrame storing the mean, error and number of value for each selected group
@@ -240,12 +242,12 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         return statistics
 
-    @property
+    @ property
     def group_control(self):
 
         return self._group_control
 
-    @group_control.setter
+    @ group_control.setter
     def group_control(self, index):
         """Set the group control.
 
@@ -260,7 +262,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.layoutChanged.emit()
 
-    @property
+    @ property
     def groups(self):
         """Return the groups.
 
