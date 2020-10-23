@@ -261,6 +261,7 @@ class MainWindow(QtWidgets.QMainWindow):
         rawdata_model.rawdata = rawdata
 
         groups = pd.read_excel(excel_file, sheet_name='groups')
+        groups = groups.reindex(sorted(groups.columns), axis=1)
         self.load_groups.emit(rawdata_model.samples, groups)
 
         genes_per_group = pd.read_excel(excel_file, sheet_name='genes')

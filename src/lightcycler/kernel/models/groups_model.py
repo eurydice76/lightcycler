@@ -22,6 +22,8 @@ class GroupsModel(QtCore.QAbstractListModel):
 
     selected = QtCore.Qt.UserRole + 2
 
+    display_group_contents = QtCore.pyqtSignal(QtCore.QModelIndex)
+
     def __init__(self, *args, **kwargs):
 
         super(GroupsModel, self).__init__(*args, **kwargs)
@@ -185,7 +187,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         default_flags = super(GroupsModel, self).flags(index)
 
-        return QtCore.Qt.ItemIsUserCheckable | default_flags
+        return QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | default_flags
 
     def get_statistics(self, selected_groups=None):
         """Returns the mean, error and number of samples for each selected group and gene.
@@ -300,6 +302,15 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.layoutChanged.emit()
 
+    def on_display_group_contents(self, index):
+        """Event handler called when the user double click on group item. Pops up a dialog which shows the contents of the selected group.
+
+        Args:
+            index (PyQt5.QtCore.QModelIndex): the selected item
+        """
+
+        self.display_group_contents.emit(index)
+
     def on_set_dynamic_matrix(self, dynamic_matrix):
         """Event handler which set the dynamic matrix.
 
@@ -400,4 +411,15 @@ class GroupsModel(QtCore.QAbstractListModel):
             self._groups[row][2] = True if value == QtCore.Qt.Checked else False
             return True
 
+        elif role == QtCore.Qt.EditRole:
+
+            self._groups[row][0] = value
+
         return super(GroupsModel, self).setData(index, value, role)
+
+    def sort(self):
+        """Sort the model.
+        """
+
+        self._groups.sort(key=lambda x: x[0])
+        self.layoutChanged.emit()

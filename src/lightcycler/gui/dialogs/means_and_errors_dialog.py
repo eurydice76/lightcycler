@@ -77,7 +77,12 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
 
         statistics_per_gene = self._statistics[gene]
 
-        self._means_and_errors_axes.bar(
+        ax = self._means_and_errors_axes.bar(
             statistics_per_gene.columns, statistics_per_gene.loc['mean'], yerr=statistics_per_gene.loc['stddev'], align='center', alpha=0.5, ecolor='black', capsize=10)
+
+        # self._means_and_errors_axes.set_xticklabels(statistics_per_gene.columns, rotation=90)
+        for tick in self._means_and_errors_axes.xaxis.get_major_ticks():
+            tick.label.set_fontsize(6)
+            tick.label.set_rotation('vertical')
 
         self._means_and_errors_canvas.draw()

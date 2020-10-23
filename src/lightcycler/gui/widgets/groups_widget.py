@@ -30,11 +30,12 @@ class GroupsWidget(QtWidgets.QWidget):
         """
 
         self._groups_listview.selectionModel().currentChanged.connect(self.on_select_group)
+        self._sort_groups_pushbutton.clicked.connect(self.on_sort_groups)
         self._new_group_pushbutton.clicked.connect(self.on_create_new_group)
         self._reset_groups_pushbutton.clicked.connect(self.on_clear)
         self._run_ttest_pushbutton.clicked.connect(self.on_run_student_test)
         self._selected_gene_combobox.currentTextChanged.connect(self.on_select_gene)
-        self._groups_listview.doubleClicked.connect(self.on_display_group_contents)
+        self._groups_listview.model().display_group_contents.connect(self.on_display_group_contents)
 
     def _build_layout(self):
         """Build the layout of the widget.
@@ -44,16 +45,23 @@ class GroupsWidget(QtWidgets.QWidget):
 
         groups_layout = QtWidgets.QHBoxLayout()
 
-        groups_layout.addWidget(self._available_samples_listview)
-
         vlayout = QtWidgets.QVBoxLayout()
-        vlayout.addWidget(self._groups_listview)
-        vlayout.addWidget(self._new_group_pushbutton)
-        vlayout.addWidget(self._reset_groups_pushbutton)
-
+        vlayout.addWidget(QtWidgets.QLabel('Available samples'))
+        vlayout.addWidget(self._available_samples_listview)
         groups_layout.addLayout(vlayout)
 
-        groups_layout.addWidget(self._samples_per_group_listview)
+        vlayout = QtWidgets.QVBoxLayout()
+        vlayout.addWidget(QtWidgets.QLabel('Created groups'))
+        vlayout.addWidget(self._groups_listview)
+        vlayout.addWidget(self._sort_groups_pushbutton)
+        vlayout.addWidget(self._new_group_pushbutton)
+        vlayout.addWidget(self._reset_groups_pushbutton)
+        groups_layout.addLayout(vlayout)
+
+        vlayout = QtWidgets.QVBoxLayout()
+        vlayout.addWidget(QtWidgets.QLabel('Samples in group'))
+        vlayout.addWidget(self._samples_per_group_listview)
+        groups_layout.addLayout(vlayout)
 
         main_layout.addLayout(groups_layout)
 
@@ -80,13 +88,14 @@ class GroupsWidget(QtWidgets.QWidget):
         self._available_samples_listview.setDragEnabled(True)
 
         self._groups_listview = GroupsListView()
-        self._groups_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._groups_listview.setSelectionMode(QtWidgets.QListView.SingleSelection)
         self._groups_listview.setModel(GroupsModel(self))
 
         self._samples_per_group_listview = DroppableListView(None, self)
         self._samples_per_group_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._samples_per_group_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
+
+        self._sort_groups_pushbutton = QtWidgets.QPushButton('Sort groups')
 
         self._new_group_pushbutton = QtWidgets.QPushButton('New group')
 
@@ -134,6 +143,22 @@ class GroupsWidget(QtWidgets.QWidget):
 
         return self._groups_listview.model()
 
+    def on_clear(self):
+        """Event handler which resets all the groups defined so far.
+        """
+
+        samples_model = self._available_samples_listview.model()
+        if samples_model is not None:
+            samples_model.reset()
+
+        groups_model = self._groups_listview.model()
+        if groups_model is not None:
+            groups_model.clear()
+
+        samples_per_group_model = self._samples_per_group_listview.model()
+        if samples_per_group_model is not None:
+            samples_per_group_model.clear()
+
     def on_create_new_group(self):
         """Event handler which creates a new group.
         """
@@ -163,22 +188,6 @@ class GroupsWidget(QtWidgets.QWidget):
         dialog = GroupContentsDialog(dynamic_matrix, samples, self._main_window)
 
         dialog.show()
-
-    def on_clear(self):
-        """Event handler which resets all the groups defined so far.
-        """
-
-        samples_model = self._available_samples_listview.model()
-        if samples_model is not None:
-            samples_model.reset()
-
-        groups_model = self._groups_listview.model()
-        if groups_model is not None:
-            groups_model.clear()
-
-        samples_per_group_model = self._samples_per_group_listview.model()
-        if samples_per_group_model is not None:
-            samples_per_group_model.clear()
 
     def on_load_groups(self, samples, groups):
         """Event handler which loads sent rawdata model to the widget tableview.
@@ -248,6 +257,8 @@ class GroupsWidget(QtWidgets.QWidget):
         self._samples_per_group_listview.setModel(samples_per_group_model)
 
     def on_set_available_samples(self, samples):
+        """
+        """
 
         available_samples_model = AvailableSamplesModel(self)
         available_samples_model.samples = samples
@@ -255,3 +266,13 @@ class GroupsWidget(QtWidgets.QWidget):
         self._available_samples_listview.setModel(available_samples_model)
 
         self._samples_per_group_listview.set_source_model(available_samples_model)
+
+    def on_sort_groups(self):
+        """Event handler which sort the groups in alphabetical order.
+        """
+
+        groups_model = self._groups_listview.model()
+        if groups_model is None:
+            return
+
+        groups_model.sort()

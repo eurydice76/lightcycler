@@ -24,6 +24,9 @@ class PandasDataModel(QtCore.QAbstractTableModel):
         return None
 
     def headerData(self, col, orientation, role):
+        """
+        """
+
         if role == QtCore.Qt.DisplayRole:
             if orientation == QtCore.Qt.Horizontal:
                 return self._data.columns[col]
@@ -32,6 +35,8 @@ class PandasDataModel(QtCore.QAbstractTableModel):
         return None
 
     def setColoredRows(self, rows):
+        """Sets the rows which will be colored.
+        """
 
         self._colored_rows = rows
 

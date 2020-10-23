@@ -37,9 +37,20 @@ class GenesWidget(QtWidgets.QWidget):
 
         hlayout = QtWidgets.QHBoxLayout()
 
-        hlayout.addWidget(self._available_genes_listview)
-        hlayout.addWidget(self._reference_genes_listview)
-        hlayout.addWidget(self._interest_genes_listview)
+        vlayout = QtWidgets.QVBoxLayout()
+        vlayout.addWidget(QtWidgets.QLabel('Available genes'))
+        vlayout.addWidget(self._available_genes_listview)
+        hlayout.addLayout(vlayout)
+
+        vlayout = QtWidgets.QVBoxLayout()
+        vlayout.addWidget(QtWidgets.QLabel('Control genes'))
+        vlayout.addWidget(self._reference_genes_listview)
+        hlayout.addLayout(vlayout)
+
+        vlayout = QtWidgets.QVBoxLayout()
+        vlayout.addWidget(QtWidgets.QLabel('Interest genes'))
+        vlayout.addWidget(self._interest_genes_listview)
+        hlayout.addLayout(vlayout)
 
         main_layout.addLayout(hlayout)
 
