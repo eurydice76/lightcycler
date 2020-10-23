@@ -1,3 +1,10 @@
+version 0.0.9
+--------------
+* UPDATED the groups are now sorted before export
+* UPDATED the RQ matrix os now highlighted
+* UPDATED the group names are editable and sortable
+* UPDATED reduced the x axis ticks size in the averages barplot
+
 version 0.0.8
 --------------
 * ADDED   csv files can now be loaded
