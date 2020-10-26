@@ -7,4 +7,5 @@ set PYTHONPATH=
 
 set dirname="%~dp0"
 
-.\Scripts\lightcycler
+start /B /D %dirname% pythonw.exe Scripts\lightcycler
+

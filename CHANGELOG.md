@@ -1,3 +1,7 @@
+version 0.0.10
+--------------
+* UPDATED fall back to the old setup.py mechanism for script
+
 version 0.0.9
 --------------
 * UPDATED the groups are now sorted before export
