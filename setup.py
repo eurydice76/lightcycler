@@ -11,7 +11,7 @@ scripts = glob.glob(os.path.join('scripts', '*'))
 with open('requirements.txt', 'r') as fin:
     install_requires = fin.readlines()
 
-scripts = glob.glob(os.path.join('scripts', 'lightcycler'))
+scripts = os.path.join('scripts', 'lightcycler')
 
 setup(name="lightcycler",
       version=package_info["__version__"],

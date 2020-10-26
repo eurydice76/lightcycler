@@ -1,3 +1,7 @@
+version 0.0.11
+--------------
+* FIXED   remove buggy glob in setup.py
+
 version 0.0.10
 --------------
 * UPDATED fall back to the old setup.py mechanism for script
