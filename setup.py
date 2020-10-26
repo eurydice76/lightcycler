@@ -6,12 +6,10 @@ from setuptools import find_packages, setup
 package_info = {}
 exec(open("src/lightcycler/__pkginfo__.py").read(), {}, package_info)
 
-scripts = glob.glob(os.path.join('scripts', '*'))
-
 with open('requirements.txt', 'r') as fin:
     install_requires = fin.readlines()
 
-scripts = os.path.join('scripts', 'lightcycler')
+scripts = glob.glob(os.path.join('scripts', '*'))
 
 setup(name="lightcycler",
       version=package_info["__version__"],

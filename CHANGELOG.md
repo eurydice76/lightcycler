@@ -1,3 +1,7 @@
+version 0.0.12
+--------------
+* FIXED   added glob for script search
+
 version 0.0.11
 --------------
 * FIXED   remove buggy glob in setup.py
