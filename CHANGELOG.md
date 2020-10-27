@@ -1,3 +1,7 @@
+version 0.0.13
+--------------
+* FIXED   the egg-info directory are now included in the NSIS distro
+
 version 0.0.12
 --------------
 * FIXED   added glob for script search

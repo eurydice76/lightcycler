@@ -96,7 +96,7 @@ Section "lightcycler ${VERSION}" SEC01
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite on
-  File /r /x *.pyc /x *.pyo /x *.log /x *.egg-info "${TARGET_DIR}\*"
+  File /r /x *.pyc /x *.pyo /x *.log "${TARGET_DIR}\*"
   File "CHANGELOG.txt"
   File "LICENSE"
   File "lightcycler_launcher.bat"
