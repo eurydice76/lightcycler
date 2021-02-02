@@ -1,3 +1,7 @@
+version 0.0.14
+--------------
+* FIXED   the app was crashing when importing exported workbooks
+
 version 0.0.13
 --------------
 * FIXED   the egg-info directory are now included in the NSIS distro
