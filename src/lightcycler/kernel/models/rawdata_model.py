@@ -46,7 +46,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         basename = os.path.basename(filename)
 
-        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(1|2|3|1-2))_(\w+)', basename)
+        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(\d+))_(\w+)', basename)
         if match is None:
             raise IOError('Invalid filename')
 
@@ -68,7 +68,8 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         # Clean up the Name column from leading "Standard" and "Control" strings
         for i in range(n_samples):
-            data_frame['Name'].iloc[i] = ' '.join(data_frame['Name'].iloc[i].split()[1:]).strip()
+            name = data_frame['Name'].iloc[i].strip()
+            data_frame['Name'].iloc[i] = re.sub(r'^(sample|control)\s*', '', name, flags=re.I)
 
         data_frame.insert(0, 'Date', [date]*n_samples)
 
@@ -80,7 +81,6 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         data_frame['Date'] = pd.to_datetime(data_frame['Date'])
         data_frame['CP'] = data_frame['CP'].str.replace(',', '.').astype(np.float)
-        print(data_frame)
 
         self._rawdata = pd.concat([self._rawdata, data_frame])
 
