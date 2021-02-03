@@ -1,3 +1,7 @@
+version 0.0.15
+--------------
+* ADDED   the ct power can be modified by the user
+
 version 0.0.14
 --------------
 * FIXED   the app was crashing when importing exported workbooks
