@@ -15,7 +15,7 @@ class GenesModel:
         self._reference_genes_model = reference_genes_model
         self._interest_genes_model = interest_genes_model
 
-    def compute_rq_matrix(self):
+    def compute_rq_matrix(self, ct_power):
         """Compute the RQ matrix.
         """
 
@@ -31,8 +31,8 @@ class GenesModel:
             logging.info('No genes of interest defined')
             return
 
-        logging.info('Computing RQ matrix. Please wait ...')
-        ct_matrix = self._groups_model.compute_ct_matrix()
+        logging.info('Computing CT matrix. Please wait ...')
+        ct_matrix = self._groups_model.compute_ct_matrix(ct_power=ct_power)
         if ct_matrix is None:
             return
 

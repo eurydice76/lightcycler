@@ -97,7 +97,10 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
                 min_value = np.nanmin(values)
                 max_value = np.nanmax(values)
 
-                gray_scale = 255 - int(128.0*(values.iloc[row, col] - min_value)/(max_value - min_value))
+                if abs(max_value - min_value) < 1.0e-15:
+                    return QtGui.QBrush(QtGui.QColor(255, 255, 255))
+                else:
+                    gray_scale = 255 - int(128.0*(values.iloc[row, col] - min_value)/(max_value - min_value))
 
                 return QtGui.QColor(gray_scale, gray_scale, gray_scale)
 
@@ -244,6 +247,10 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         """
 
         rawdata = rawdata_model.rawdata
+
+        if 'Gene' not in rawdata.columns:
+            logging.error('No data loaded')
+            return
 
         genes = list(collections.OrderedDict.fromkeys(rawdata['Gene']))
 

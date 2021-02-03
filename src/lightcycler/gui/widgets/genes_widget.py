@@ -55,7 +55,14 @@ class GenesWidget(QtWidgets.QWidget):
         main_layout.addLayout(hlayout)
 
         main_layout.addWidget(self._reset_genes_pushbutton)
-        main_layout.addWidget(self._compute_rq_matrix_pushbutton)
+
+        rq_matrix_layout = QtWidgets.QHBoxLayout()
+
+        rq_matrix_layout.addWidget(self._ct_power_label)
+        rq_matrix_layout.addWidget(self._ct_power_spinbox)
+        rq_matrix_layout.addWidget(self._compute_rq_matrix_pushbutton, stretch=4)
+
+        main_layout.addLayout(rq_matrix_layout)
 
         main_layout.addWidget(self._tabs, stretch=2)
 
@@ -83,6 +90,15 @@ class GenesWidget(QtWidgets.QWidget):
         self._interest_genes_listview.setModel(interest_genes_model)
 
         self._reset_genes_pushbutton = QtWidgets.QPushButton('Reset')
+
+        self._ct_power_label = QtWidgets.QLabel('CT power')
+
+        self._ct_power_spinbox = QtWidgets.QDoubleSpinBox()
+        self._ct_power_spinbox.setMinimum(0.0)
+        self._ct_power_spinbox.setMaximum(2.0)
+        self._ct_power_spinbox.setValue(2.0)
+        self._ct_power_spinbox.setDecimals(4)
+        self._ct_power_spinbox.setSingleStep(0.0001)
 
         self._compute_rq_matrix_pushbutton = QtWidgets.QPushButton('Compute RQ matrix')
 
@@ -123,7 +139,7 @@ class GenesWidget(QtWidgets.QWidget):
         """Compute the RQ matrix.
         """
 
-        self._genes_model.compute_rq_matrix()
+        self._genes_model.compute_rq_matrix(self._ct_power_spinbox.value())
 
     def export(self, workbook):
         """Event handler which export the raw data to an excel spreadsheet.

@@ -55,7 +55,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.reset()
 
-    def compute_ct_matrix(self):
+    def compute_ct_matrix(self, ct_power):
         """Compute the so-called CT matrix
         """
 
@@ -85,7 +85,7 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         ct_matrix = average_matrix - means
 
-        ct_matrix = pow(2, ct_matrix)
+        ct_matrix = pow(ct_power, ct_matrix)
 
         ct_matrix = ct_matrix.round(3)
 

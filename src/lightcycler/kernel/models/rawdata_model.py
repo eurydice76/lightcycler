@@ -69,7 +69,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
         # Clean up the Name column from leading "Standard" and "Control" strings
         for i in range(n_samples):
             name = data_frame['Name'].iloc[i].strip()
-            data_frame['Name'].iloc[i] = re.sub(r'^(sample|control)\s*', '', name, flags=re.I)
+            data_frame['Name'].iloc[i] = re.sub(r'^(sample|control\w*)\s*', '', name, flags=re.I).strip()
 
         data_frame.insert(0, 'Date', [date]*n_samples)
 

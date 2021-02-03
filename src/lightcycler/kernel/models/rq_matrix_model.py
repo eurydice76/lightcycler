@@ -55,9 +55,11 @@ class RQMatrixModel(QtCore.QAbstractTableModel):
                 min_value = np.nanmin(self._rq_matrix)
                 max_value = np.nanmax(self._rq_matrix)
 
-                gray_scale = 255 - int(128.0*(self._rq_matrix.iloc[row, col] - min_value)/(max_value - min_value))
-
-                return QtGui.QColor(gray_scale, gray_scale, gray_scale)
+                if abs(max_value - min_value) < 1.0e-15:
+                    return QtGui.QBrush(QtGui.QColor(255, 255, 255))
+                else:
+                    gray_scale = 255 - int(128.0*(self._rq_matrix.iloc[row, col] - min_value)/(max_value - min_value))
+                    return QtGui.QColor(gray_scale, gray_scale, gray_scale)
 
     def headerData(self, idx, orientation, role):
         """Returns the header data for a given index, orientation and role.

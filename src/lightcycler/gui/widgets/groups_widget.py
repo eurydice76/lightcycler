@@ -196,7 +196,8 @@ class GroupsWidget(QtWidgets.QWidget):
         groups_model = self._groups_listview.model()
         groups_model.load_groups(groups)
 
-        filtered_samples = [sample for sample in samples if sample in groups.values]
+        # Coerce the dtype to str in case of empty dataframe to avoid FutureWarning
+        filtered_samples = [sample for sample in samples if sample in groups.values.astype(str)]
 
         available_samples_model = AvailableSamplesModel(self)
         available_samples_model.samples = samples

@@ -302,7 +302,7 @@ class MainWindow(QtWidgets.QMainWindow):
             progress_bar.update(progress+1)
 
         self.statusBar().showMessage('')
-        logging.info('Loaded successfully {} files out of {}'.format(n_loaded_files, n_data_files))
+        logging.info('Loaded successfully {} file(s) out of {}'.format(n_loaded_files, n_data_files))
 
         # Sort the model.
         try:
