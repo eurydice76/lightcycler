@@ -78,7 +78,7 @@ class DroppableListView(QtWidgets.QListView):
             super(DroppableListView, self).keyPressEvent(event)
 
     def set_source_model(self, source_model):
-        """Attach a samples model to the widget
+        """Bind a samples model to the widget
         """
 
         self._source_model = source_model

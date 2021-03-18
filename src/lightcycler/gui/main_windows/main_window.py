@@ -33,9 +33,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     load_genes = QtCore.pyqtSignal(list, pd.DataFrame)
 
-    load_groups = QtCore.pyqtSignal(list, pd.DataFrame)
+    # Signal emitted when Groups sheet of an imported workbook is read.
+    groups_loaded = QtCore.pyqtSignal(list, pd.DataFrame)
 
-    raw_data_loaded = QtCore.pyqtSignal(list)
+    # Signal emitted when Group control sheet of an imported workbook is read.
+    group_control_loaded = QtCore.pyqtSignal(str)
 
     reset_data = QtCore.pyqtSignal()
 
@@ -59,19 +61,25 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         rawdata_model = self._rawdata_widget.model()
-        dynamic_matrix_model = self._dynamic_matrix_widget.model()
-        groups_model = self._groups_widget.model()
+        rawdata_model.data_updated.connect(self._dynamic_matrix_widget.on_build_dynamic_matrices)
 
-        rawdata_model.update_dynamic_matrix.connect(self._dynamic_matrix_widget.on_build_dynamic_matrix)
-        dynamic_matrix_model.propagate_means.connect(groups_model.on_set_dynamic_matrix)
-        self.clear_data.connect(rawdata_model.on_clear)
-        self.clear_data.connect(dynamic_matrix_model.on_clear)
-        self.clear_data.connect(self._groups_widget.on_clear)
-        self.reset_data.connect(rawdata_model.on_reset)
-        self.load_genes.connect(self._genes_widget.on_load_genes)
-        self.load_groups.connect(self._groups_widget.on_load_groups)
+        # Fill up the available samples
         self.set_available_samples.connect(self._groups_widget.on_set_available_samples)
-        self.set_available_genes.connect(self._genes_widget.on_set_available_genes)
+
+        groups_model = self._groups_widget.model()
+        self._dynamic_matrix_widget.dynamic_matrices_computed.connect(groups_model.on_set_dynamic_matrices)
+
+        self.clear_data.connect(rawdata_model.on_clear)
+        self.clear_data.connect(self._groups_widget.on_clear)
+
+        self.reset_data.connect(rawdata_model.on_reset)
+
+        self.groups_loaded.connect(self._groups_widget.on_load_groups)
+        self.group_control_loaded.connect(self._groups_widget.on_set_group_control)
+
+#        self.load_genes.connect(self._genes_widget.on_load_genes)
+
+#        self.set_available_genes.connect(self._genes_widget.on_set_available_genes)
 
     def _build_layout(self):
         """Build the layout.
@@ -162,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(self._main_frame)
 
-        self.setGeometry(0, 0, 1200, 1100)
+        self.setGeometry(0, 0, 1200, 800)
 
         self.setWindowTitle('lightcycler {}'.format(__version__))
 
@@ -226,7 +234,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._rawdata_widget.export(workbook)
         self._dynamic_matrix_widget.export(workbook)
         self._groups_widget.export(workbook)
-        self._genes_widget.export(workbook)
+        # self._genes_widget.export(workbook)
 
         try:
             workbook.save(filename)
@@ -246,8 +254,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         workbook = xlrd.open_workbook(excel_file)
         sheet_names = workbook.sheet_names()
-        if 'raw data' not in sheet_names or 'groups' not in sheet_names:
-            logging.error('Invalid excel file: missing "raw data" and/or "groups" sheets')
+        if 'Raw data' not in sheet_names or 'Groups' not in sheet_names:
+            logging.error('Invalid excel file: missing "Raw data" and/or "Groups" sheets')
             return
 
         # In case of an import clear the data before.
@@ -255,18 +263,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
         logging.info('Importing {} file. Please wait ...'.format(excel_file))
 
-        rawdata = pd.read_excel(excel_file, sheet_name='raw data')
+        rawdata = pd.read_excel(excel_file, sheet_name='Raw data')
 
         rawdata_model = self._rawdata_widget.model()
         rawdata_model.rawdata = rawdata
 
-        groups = pd.read_excel(excel_file, sheet_name='groups')
+        groups = pd.read_excel(excel_file, sheet_name='Groups')
         groups = groups.reindex(sorted(groups.columns), axis=1)
-        self.load_groups.emit(rawdata_model.samples, groups)
+        self.groups_loaded.emit(rawdata_model.samples, groups)
 
-        genes_per_group = pd.read_excel(excel_file, sheet_name='genes')
+        group_control = pd.read_excel(excel_file, sheet_name='Group control', header=None)
+        if not group_control.empty:
+            self.group_control_loaded.emit(group_control.loc[0, 0])
 
-        self.load_genes.emit(rawdata_model.genes, genes_per_group)
+        # genes_per_group = pd.read_excel(excel_file, sheet_name='genes')
+
+        # self.load_genes.emit(rawdata_model.genes, genes_per_group)
 
         logging.info('... successfully imported {} file'.format(excel_file))
 
@@ -275,7 +287,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         # Pop up a file browser for selecting the workbooks
-        data_files = QtWidgets.QFileDialog.getOpenFileNames(self, 'Open data files', '', 'Data Files (*.pdf *.PDF *.csv)')[0]
+        data_files = QtWidgets.QFileDialog.getOpenFileNames(self, 'Open data files', '', 'Data Files (*.pdf *.PDF *.csv *.txt)')[0]
         if not data_files:
             return
 
@@ -312,8 +324,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if rawdata_model.rowCount() == 0:
             return
-
-        rawdata_model.update_dynamic_matrix.emit(rawdata_model)
 
         self.set_available_samples.emit(rawdata_model.samples)
 

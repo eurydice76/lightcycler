@@ -1,18 +1,16 @@
 from PyQt5 import QtWidgets
 
-from pylab import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
-
 from lightcycler.kernel.models.groups_model import GroupsModel
+from lightcycler.kernel.models.grubbs_data_model import GrubbsDataModel
 
 
-class MeansAndErrorsDialog(QtWidgets.QDialog):
+class GrubbsDataDialog(QtWidgets.QDialog):
 
-    def __init__(self, statistics, *args, **kwargs):
+    def __init__(self, grubbs_data, main_window, *args, **kwargs):
 
-        super(MeansAndErrorsDialog, self).__init__(*args, **kwargs)
+        super(GrubbsDataDialog, self).__init__(main_window, *args, **kwargs)
 
-        self._statistics = statistics
+        self._grubbs_data = grubbs_data
 
         self._init_ui()
 
@@ -29,8 +27,7 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
 
         main_layout = QtWidgets.QVBoxLayout()
 
-        main_layout.addWidget(self._means_and_errors_canvas)
-        main_layout.addWidget(self._means_and_errors_toolbar)
+        main_layout.addWidget(self._grubbs_data_tableview)
 
         hlayout = QtWidgets.QHBoxLayout()
 
@@ -50,14 +47,12 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
         """Build the widgets of the widget.
         """
 
-        self._means_and_errors_figure = Figure()
-        self._means_and_errors_axes = self._means_and_errors_figure.add_subplot(111)
-        self._means_and_errors_canvas = FigureCanvasQTAgg(self._means_and_errors_figure)
-        self._means_and_errors_toolbar = NavigationToolbar2QT(self._means_and_errors_canvas, self)
+        self._grubbs_data_tableview = QtWidgets.QTableView()
+        self._grubbs_data_tableview.setModel(None)
 
         self._selected_gene_label = QtWidgets.QLabel('Gene')
         self._selected_gene_combobox = QtWidgets.QComboBox()
-        self._selected_gene_combobox.addItems(self._statistics.keys())
+        self._selected_gene_combobox.addItems(self._grubbs_data.keys())
 
         self._selected_zone_label = QtWidgets.QLabel('Zone')
         self._selected_zone_combobox = QtWidgets.QComboBox()
@@ -72,7 +67,7 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
         self.on_select_gene(0)
 
     def on_select_gene(self, index):
-        """Event handler which updates the means and errors plot for the selected gene.
+        """Select a gene and update the Grubbs data table view.
 
         Args:
             index (int): the index of the select gene
@@ -82,10 +77,14 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
 
         zone = self._selected_zone_combobox.currentText()
 
-        self._plot(self._statistics[gene][zone])
+        cp_values, outliers_indices = self._grubbs_data[gene][zone]
+
+        grubbs_data_model = GrubbsDataModel(cp_values, outliers_indices)
+
+        self._grubbs_data_tableview.setModel(grubbs_data_model)
 
     def on_select_zone(self, index):
-        """Event handler which updates the means and errors plot for the selected gene.
+        """Select a zone and update the Grubbs data table view.
 
         Args:
             index (int): the index of the select gene
@@ -95,20 +94,8 @@ class MeansAndErrorsDialog(QtWidgets.QDialog):
 
         zone = self._selected_zone_combobox.currentText()
 
-        self._plot(self._statistics[gene][zone])
+        cp_values, outliers_indices = self._grubbs_data[gene][zone]
 
-    def _plot(self, df):
-        """
-        """
+        grubbs_data_model = GrubbsDataModel(cp_values, outliers_indices)
 
-        self._means_and_errors_axes.clear()
-        self._means_and_errors_axes.set_xlabel('groups')
-        self._means_and_errors_axes.set_ylabel('Means')
-
-        self._means_and_errors_axes.bar(df.columns, df.loc['mean'], yerr=df.loc['stddev'], align='center', alpha=0.5, ecolor='black', capsize=10)
-
-        # self._means_and_errors_axes.set_xticklabels(statistics_per_gene.columns, rotation=90)
-        for tick in self._means_and_errors_axes.xaxis.get_major_ticks():
-            tick.label.set_fontsize(6)
-
-        self._means_and_errors_canvas.draw()
+        self._grubbs_data_tableview.setModel(grubbs_data_model)

@@ -91,3 +91,16 @@ class DroppableModel(QtCore.QAbstractListModel):
         """
 
         return self._items
+
+    def flags(self, index):
+        """Return the flags of an itme with a given index.
+
+        Args:
+            index (PyQt5.QtCore.QModelIndex): the index
+
+        Returns:
+            int: the flag
+        """
+
+        if index.isValid():
+            return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEnabled

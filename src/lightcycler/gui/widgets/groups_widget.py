@@ -5,6 +5,7 @@ from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.gui.dialogs.means_and_errors_dialog import MeansAndErrorsDialog
 from lightcycler.gui.dialogs.group_contents_dialog import GroupContentsDialog
+from lightcycler.gui.dialogs.grubbs_data_dialog import GrubbsDataDialog
 from lightcycler.gui.views.copy_pastable_tableview import CopyPastableTableView
 from lightcycler.gui.views.droppable_listview import DroppableListView
 from lightcycler.gui.views.groups_listview import GroupsListView
@@ -23,6 +24,8 @@ class GroupsWidget(QtWidgets.QWidget):
 
         self._init_ui()
 
+        self._statistics = collections.OrderedDict()
+
         self._student_test_per_gene = collections.OrderedDict()
 
     def _build_events(self):
@@ -35,7 +38,9 @@ class GroupsWidget(QtWidgets.QWidget):
         self._reset_groups_pushbutton.clicked.connect(self.on_clear)
         self._run_ttest_pushbutton.clicked.connect(self.on_run_student_test)
         self._selected_gene_combobox.currentTextChanged.connect(self.on_select_gene)
-        self._groups_listview.model().display_group_contents.connect(self.on_display_group_contents)
+        self._selected_zone_combobox.currentTextChanged.connect(self.on_select_zone)
+        self._plot_statistics_button.clicked.connect(self.on_plot_statistics)
+        self._groups_listview.display_grubbs_data.connect(self.on_display_grubbs_data)
 
     def _build_layout(self):
         """Build the layout of the widget.
@@ -70,9 +75,12 @@ class GroupsWidget(QtWidgets.QWidget):
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self._selected_gene_label)
         hlayout.addWidget(self._selected_gene_combobox)
+        hlayout.addWidget(self._selected_zone_label)
+        hlayout.addWidget(self._selected_zone_combobox)
         hlayout.addStretch()
+        hlayout.addWidget(self._plot_statistics_button)
 
-        main_layout.addWidget(self._student_test_tableview)
+        main_layout.addWidget(self._tabs)
 
         main_layout.addLayout(hlayout)
 
@@ -82,18 +90,20 @@ class GroupsWidget(QtWidgets.QWidget):
         """Build the widgets of the widget.
         """
 
-        self._available_samples_listview = QtWidgets.QListView()
+        self._available_samples_listview = DroppableListView(None, self)
         self._available_samples_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._available_samples_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
         self._available_samples_listview.setDragEnabled(True)
+        self._available_samples_listview.setModel(AvailableSamplesModel(self))
 
         self._groups_listview = GroupsListView()
         self._groups_listview.setSelectionMode(QtWidgets.QListView.SingleSelection)
         self._groups_listview.setModel(GroupsModel(self))
 
-        self._samples_per_group_listview = DroppableListView(None, self)
+        self._samples_per_group_listview = DroppableListView(self._available_samples_listview.model(), self)
         self._samples_per_group_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._samples_per_group_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
+        self._samples_per_group_listview.setDragEnabled(True)
 
         self._sort_groups_pushbutton = QtWidgets.QPushButton('Sort groups')
 
@@ -103,10 +113,22 @@ class GroupsWidget(QtWidgets.QWidget):
 
         self._run_ttest_pushbutton = QtWidgets.QPushButton('Run student test')
 
-        self._selected_gene_label = QtWidgets.QLabel('Selected gene')
+        self._selected_gene_label = QtWidgets.QLabel('Gene')
         self._selected_gene_combobox = QtWidgets.QComboBox()
 
+        self._selected_zone_label = QtWidgets.QLabel('Zone')
+        self._selected_zone_combobox = QtWidgets.QComboBox()
+        self._selected_zone_combobox.addItems(GroupsModel.student_test_zones)
+
+        self._plot_statistics_button = QtWidgets.QPushButton('Plot statistics')
+
+        self._tabs = QtWidgets.QTabWidget()
+
+        self._statistics_tableview = CopyPastableTableView(delimiter=',')
+        self._tabs.addTab(self._statistics_tableview, 'Statistics')
+
         self._student_test_tableview = CopyPastableTableView(delimiter=',')
+        self._tabs.addTab(self._student_test_tableview, 'Student tests')
 
     def _init_ui(self):
         """Initialize the ui.
@@ -131,6 +153,8 @@ class GroupsWidget(QtWidgets.QWidget):
 
     @property
     def groups_listview(self):
+        """Getter for _groups_listview attribute.
+        """
 
         return self._groups_listview
 
@@ -168,25 +192,19 @@ class GroupsWidget(QtWidgets.QWidget):
         if ok and group:
             self._groups_listview.model().add_group(group)
 
-    def on_display_group_contents(self, index):
-        """Event handler called when the user double click on group item. Pops up a dialog which shows the contents of the selected group.
-
-        Args:
-            index (PyQt5.QtCore.QModelIndex): the selected item
+    def on_display_grubbs_data(self, index):
+        """Pops up a dialog which shows the Grubbs data.
         """
 
         groups_model = self._groups_listview.model()
         if groups_model is None:
             return
 
-        selected_group_model = groups_model.data(index, GroupsModel.model)
+        selected_group = groups_model.data(index, role=QtCore.Qt.DisplayRole)
 
-        samples = [selected_group_model.data(selected_group_model.index(i), QtCore.Qt.DisplayRole) for i in range(selected_group_model.rowCount())]
+        grubbs_data = groups_model.get_outliers(selected_group)
 
-        dynamic_matrix = self._main_window.dynamic_matrix_widget.model().dynamic_matrix
-
-        dialog = GroupContentsDialog(dynamic_matrix, samples, self._main_window)
-
+        dialog = GrubbsDataDialog(grubbs_data, self._main_window)
         dialog.show()
 
     def on_load_groups(self, samples, groups):
@@ -208,25 +226,43 @@ class GroupsWidget(QtWidgets.QWidget):
 
         self._samples_per_group_listview.set_source_model(available_samples_model)
 
+    def on_set_group_control(self, group_control):
+        """Sets the group control.
+
+        Args:
+            group_control (str): the group control
+        """
+
+        groups_model = self._groups_listview.model()
+
+        groups_model.group_control = group_control
+
+    def on_plot_statistics(self):
+        """Pops up a dialog for plotting statistics.
+        """
+
+        if not self._statistics:
+            return
+
+        means_and_errors_dialog = MeansAndErrorsDialog(self._statistics, self)
+        means_and_errors_dialog.show()
+
     def on_run_student_test(self):
         """Event handler which will performs pairwise student test on the groups defined so far.
         """
 
         groups_model = self._groups_listview.model()
-
-        self._student_test_per_gene = groups_model.run_student_test()
-
-        self._selected_gene_combobox.clear()
-        self._selected_gene_combobox.addItems(self._student_test_per_gene.keys())
-
         selected_groups = [group[0] for group in groups_model.groups if group[2]]
 
-        statistics = groups_model.get_statistics(selected_groups=selected_groups)
-        if statistics is None:
-            return
+        # Compute the statistics
+        self._statistics = groups_model.get_statistics(selected_groups=selected_groups)
 
-        means_and_errors_dialog = MeansAndErrorsDialog(statistics, self)
-        means_and_errors_dialog.show()
+        # Perform the student test for the selected groups
+        self._student_test_per_gene = groups_model.run_student_test()
+
+        # Update the selected gene and zone combo boxes
+        self._selected_gene_combobox.clear()
+        self._selected_gene_combobox.addItems(list(self._student_test_per_gene.keys()))
 
     def on_select_gene(self, gene):
         """Event handler which updates the student table view for the selected gene.
@@ -238,9 +274,15 @@ class GroupsWidget(QtWidgets.QWidget):
         if gene not in self._student_test_per_gene:
             return
 
-        df = self._student_test_per_gene[gene]
+        zone = self._selected_zone_combobox.currentText()
+        if not zone:
+            return
 
-        self._student_test_tableview.setModel(PValuesDataModel(df, self))
+        statistics_df = self._statistics[gene][zone]
+        self._statistics_tableview.setModel(PValuesDataModel(statistics_df, self))
+
+        student_test_df = self._student_test_per_gene[gene][zone]
+        self._student_test_tableview.setModel(PValuesDataModel(student_test_df, self))
 
     def on_select_group(self, idx):
         """Event handler which select a new group.
@@ -257,8 +299,33 @@ class GroupsWidget(QtWidgets.QWidget):
 
         self._samples_per_group_listview.setModel(samples_per_group_model)
 
-    def on_set_available_samples(self, samples):
+        self._available_samples_listview.set_source_model(samples_per_group_model)
+
+    def on_select_zone(self, zone):
+        """Event handler which updates the student table view for the selected zone.
+
+        Args:
+            zone (str): the selected zone
         """
+
+        gene = self._selected_gene_combobox.currentText()
+        if not gene:
+            return
+
+        if not zone:
+            return
+
+        statistics_df = self._statistics[gene][zone]
+        self._statistics_tableview.setModel(PValuesDataModel(statistics_df, self))
+
+        student_test_df = self._student_test_per_gene[gene][zone]
+        self._student_test_tableview.setModel(PValuesDataModel(student_test_df, self))
+
+    def on_set_available_samples(self, samples):
+        """Update the available sample listview with a new set of samples.
+
+        Args:
+            samples (list of str): the new samples
         """
 
         available_samples_model = AvailableSamplesModel(self)

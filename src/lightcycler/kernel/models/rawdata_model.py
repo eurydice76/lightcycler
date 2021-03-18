@@ -23,7 +23,7 @@ class RawDataError(Exception):
 
 class RawDataModel(QtCore.QAbstractTableModel):
 
-    update_dynamic_matrix = QtCore.pyqtSignal(QtCore.QAbstractTableModel)
+    data_updated = QtCore.pyqtSignal(pd.DataFrame)
 
     def __init__(self, *args, **kwargs):
         """Constructor.
@@ -34,6 +34,72 @@ class RawDataModel(QtCore.QAbstractTableModel):
         self._rawdata = pd.DataFrame()
 
         self._rawdata_default = copy.copy(self._rawdata)
+
+    def remove_indexes(self, indexes):
+        """Remove a set of indexes from the model.
+
+        Args:
+            indexes (list of int): the indexes to remove
+        """
+
+        df_indexes = [self._rawdata.index[idx] for idx in indexes]
+
+        self._rawdata.drop(index=df_indexes, inplace=True)
+
+        self.layoutChanged.emit()
+
+        self.data_updated.emit(self._rawdata)
+
+    def flags(self, index):
+        """
+        """
+
+        col = index.column()
+
+        flags = super(RawDataModel, self).flags(index)
+        flags |= QtCore.Qt.ItemIsSelectable
+
+        if col in [4, 5, 6]:
+            flags |= QtCore.Qt.ItemIsEditable
+
+        return flags
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        """
+        """
+
+        row = index.row()
+
+        col = index.column()
+
+        # Only columns 4, 5 and 6 are modifiable
+        if col not in [4, 5, 6]:
+            return False
+
+        if col == 4:
+            try:
+                _ = int(value)
+            except ValueError:
+                return False
+            else:
+                self._rawdata.iloc[row, col] = value
+
+        elif col == 5:
+            if value in ['A', 'B', 'C', 'D', 'E', 'Z']:
+                self._rawdata.iloc[row, col] = value
+
+        elif col == 6:
+            try:
+                value = float(value if value else np.nan)
+            except ValueError:
+                return False
+            else:
+                self._rawdata.iloc[row, col] = value
+
+        # Emit a signal that the raw data has been updated
+        self.data_updated.emit(self._rawdata)
+
+        return True
 
     def read_pdf_file(self, pdf_file):
         """Read a PDF data file.
@@ -46,11 +112,14 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         basename = os.path.basename(filename)
 
-        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(\d+))_(\w+)', basename)
+        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(\d+)(-\d+)?)_(\w+)', basename)
         if match is None:
             raise IOError('Invalid filename')
 
-        date, rt, _, gene = match.groups()
+        matches = match.groups()
+        date = matches[0]
+        rt = matches[1]
+        gene = matches[-1]
 
         pages = tabula.read_pdf(pdf_file, pages='all')
 
@@ -66,10 +135,26 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         n_samples = len(data_frame.index)
 
-        # Clean up the Name column from leading "Standard" and "Control" strings
+        # Clean up the Name column from leading "Sample" and "Control" strings
         for i in range(n_samples):
             name = data_frame['Name'].iloc[i].strip()
-            data_frame['Name'].iloc[i] = re.sub(r'^(sample|control\w*)\s*', '', name, flags=re.I).strip()
+            data_frame['Name'].iloc[i] = name.split(' ')[-1].strip()
+
+        names_and_zones = []
+        for i in range(n_samples):
+            match = re.findall(r'(\d+)([ABCDEF])', data_frame['Name'].iloc[i])
+            if match:
+                names_and_zones.append(match[0])
+            else:
+                names_and_zones.append([data_frame['Name'].iloc[i], ''])
+
+        names = [v[0] for v in names_and_zones]
+        zones = [v[1] for v in names_and_zones]
+        # The F zone are the same that E zone
+        zones = [z if z != 'F' else 'E' for z in zones]
+        zones = [z if z else 'Z' for z in zones]
+
+        data_frame['Name'] = names
 
         data_frame.insert(0, 'Date', [date]*n_samples)
 
@@ -77,12 +162,17 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         data_frame.insert(2, 'RT', [rt]*n_samples)
 
-        data_frame.insert(6, 'File', [basename]*n_samples)
+        data_frame.insert(5, 'Zone', zones)
+
+        data_frame.insert(7, 'File', [basename]*n_samples)
 
         data_frame['Date'] = pd.to_datetime(data_frame['Date'])
         data_frame['CP'] = data_frame['CP'].str.replace(',', '.').astype(np.float)
 
         self._rawdata = pd.concat([self._rawdata, data_frame])
+
+        # Emit a signal that the raw data has been updated
+        self.data_updated.emit(self._rawdata)
 
     def read_csv_file(self, csv_file):
         """Read a csv data file.
@@ -95,11 +185,14 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         basename = os.path.basename(filename)
 
-        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(1|2|3|1-2))_(\w+)', basename)
+        match = re.match(r'(\d{4}-\d{2}-\d{2}) .*(RT(\d+)(-\d+)?)_(\w+)', basename)
         if match is None:
             raise IOError('Invalid filename')
 
-        date, rt, _, gene = match.groups()
+        matches = match.groups()
+        date = matches[0]
+        rt = matches[1]
+        gene = matches[-1]
 
         fin = open(csv_file, 'r')
         data = fin.readlines()
@@ -111,7 +204,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         reader = csv.reader(data, delimiter='\t')
 
-        data_frame = pd.DataFrame(columns=['Date', 'Gene', 'RT', 'Pos', 'Name', 'CP', 'File'])
+        data_frame = pd.DataFrame(columns=['Date', 'Gene', 'RT', 'Pos', 'Name', 'Zone', 'CP', 'File'])
 
         for row in reader:
             line = {}
@@ -120,6 +213,13 @@ class RawDataModel(QtCore.QAbstractTableModel):
             line['RT'] = [rt]
             line['Pos'] = [row[2]]
             line['Name'] = [' '.join(row[3].split()[1:]).strip()]
+            match = re.findall(r'(\d+)([ABCDEF])', line['Name'][0])
+            if match:
+                line['Name'] = [match[0][0]]
+                line['Zone'] = [match[0][1]]
+            else:
+                line['Zone'] = ['Z']
+
             cp = float(row[4].replace(',', '.')) if row[4].strip() else np.nan
             line['CP'] = [cp]
             line['File'] = [basename]
@@ -131,7 +231,10 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self._rawdata = pd.concat([self._rawdata, data_frame])
 
-    _readers = {'.pdf': read_pdf_file, '.csv': read_csv_file}
+        # Emit a signal that the raw data has been updated
+        self.data_updated.emit(self._rawdata)
+
+    _readers = {'.pdf': read_pdf_file, '.csv': read_csv_file, '.txt': read_csv_file}
 
     def add_data(self, data_file, sort=False):
         """Add new data to the model.
@@ -163,6 +266,8 @@ class RawDataModel(QtCore.QAbstractTableModel):
         self._rawdata = pd.DataFrame()
 
         self.layoutChanged.emit()
+
+        self.data_updated.emit(self._rawdata)
 
     def columnCount(self, parent=None):
         """Return the number of columns of the model for a given parent.
@@ -199,6 +304,9 @@ class RawDataModel(QtCore.QAbstractTableModel):
             cp_value = self._rawdata['CP'].iloc[row]
             if np.isnan(cp_value):
                 return QtGui.QBrush(QtCore.Qt.red)
+        elif role == QtCore.Qt.BackgroundRole:
+            cp_value = self._rawdata['CP'].iloc[row]
+            return QtGui.QBrush(QtGui.QColor(255, 119, 51)) if float(cp_value) > 35 else QtGui.QBrush(QtCore.Qt.white)
 
     def export(self, workbook):
         """Export the raw data to an excel spreadsheet.
@@ -207,8 +315,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
             workbook (openpyxl.workbook.workbook.Workbook): the workbook
         """
 
-        workbook.create_sheet('raw data')
-        worksheet = workbook.get_sheet_by_name('raw data')
+        worksheet = workbook.create_sheet('Raw data')
 
         for i, v in enumerate(self._rawdata.columns):
             worksheet.cell(row=1, column=i+1).value = v
@@ -220,6 +327,9 @@ class RawDataModel(QtCore.QAbstractTableModel):
     def headerData(self, col, orientation, role):
         """Returns the header data for a given row/column, orientation and role
         """
+
+        if self._rawdata.columns.empty:
+            return QtCore.QVariant()
 
         if role == QtCore.Qt.DisplayRole:
             if orientation == QtCore.Qt.Horizontal:
@@ -260,7 +370,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
         self._rawdata_default = copy.copy(self._rawdata)
         self.layoutChanged.emit()
 
-        self.update_dynamic_matrix.emit(self)
+        self.data_updated.emit(self._rawdata)
 
     def on_reset(self):
 
@@ -268,7 +378,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-        self.update_dynamic_matrix.emit(self)
+        self.data_updated.emit(self._rawdata)
 
     def on_change_value(self, sample, gene, index, new_value):
         """Change a value of the raw data.

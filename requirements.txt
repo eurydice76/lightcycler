@@ -7,3 +7,4 @@ tabula-py
 scipy
 scikit-posthocs
 xlrd
+outlier_utils

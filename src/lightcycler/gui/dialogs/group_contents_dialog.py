@@ -63,7 +63,7 @@ class GroupContentsDialog(QtWidgets.QDialog):
         self.on_select_gene(0)
 
     def on_select_gene(self, index):
-        """Event handler which updates the means and errors plot for the selected gene.
+        """
 
         Args:
             index (int): the index of the select gene

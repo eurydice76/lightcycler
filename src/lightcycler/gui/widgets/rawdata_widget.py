@@ -3,6 +3,7 @@ import logging
 from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.kernel.models.rawdata_model import RawDataModel
+from lightcycler.gui.views.rawdata_tableview import RawDataTableView
 
 
 class RawDataWidget(QtWidgets.QWidget):
@@ -27,7 +28,7 @@ class RawDataWidget(QtWidgets.QWidget):
         """Build the widgets of the widget.
         """
 
-        self._rawdata_tableview = QtWidgets.QTableView()
+        self._rawdata_tableview = RawDataTableView()
         rawdata_model = RawDataModel(self)
         self._rawdata_tableview.setModel(rawdata_model)
 

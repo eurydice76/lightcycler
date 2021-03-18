@@ -27,6 +27,9 @@ class PandasDataModel(QtCore.QAbstractTableModel):
         """
         """
 
+        if self._data.empty:
+            return None
+
         if role == QtCore.Qt.DisplayRole:
             if orientation == QtCore.Qt.Horizontal:
                 return self._data.columns[col]

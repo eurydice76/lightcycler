@@ -6,6 +6,8 @@ from PyQt5 import QtCore
 class AvailableGenesModel(QtCore.QAbstractListModel):
 
     def __init__(self, *args, **kwargs):
+        """Constructor.
+        """
 
         super(AvailableGenesModel, self).__init__(*args, **kwargs)
 
@@ -14,6 +16,8 @@ class AvailableGenesModel(QtCore.QAbstractListModel):
         self._genes_default = []
 
     def clear(self):
+        """Clear the model.
+        """
 
         self._genes = []
 
@@ -57,7 +61,10 @@ class AvailableGenesModel(QtCore.QAbstractListModel):
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEnabled
 
     def remove_items(self, items):
-        """
+        """Remove genes from the model.
+
+        Args:
+            items (list of str): the genes to remove
         """
 
         indexes = []
@@ -77,17 +84,30 @@ class AvailableGenesModel(QtCore.QAbstractListModel):
 
     def rowCount(self, parent=None):
         """Returns the number of genes.
+
+        Return:
+            int: the number of genes
         """
 
         return len(self._genes)
 
     @property
     def genes(self):
+        """Return the genes.
+
+        Return:
+            list of str: the genes
+        """
 
         return self._genes
 
     @genes.setter
     def genes(self, genes):
+        """Set the genes.
+
+        Args:
+            genes (list of str): the genes
+        """
 
         self._genes = genes
 
@@ -96,6 +116,8 @@ class AvailableGenesModel(QtCore.QAbstractListModel):
         self.layoutChanged.emit()
 
     def reset(self):
+        """Reset the model.
+        """
 
         self._genes = copy.copy(self._genes_default)
 

@@ -8,6 +8,8 @@ from PyQt5 import QtCore
 class GenesModel:
 
     def __init__(self, groups_model, ct_matrix_model, rq_matrix_model, reference_genes_model, interest_genes_model):
+        """Constructor.
+        """
 
         self._groups_model = groups_model
         self._ct_matrix_model = ct_matrix_model
@@ -17,6 +19,9 @@ class GenesModel:
 
     def compute_rq_matrix(self, ct_power):
         """Compute the RQ matrix.
+
+        Args:
+            ct_power (float): the power used for computing the CT matrix
         """
 
         reference_genes = [self._reference_genes_model.data(self._reference_genes_model.index(i, 0), QtCore.Qt.DisplayRole)

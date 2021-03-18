@@ -6,6 +6,8 @@ from PyQt5 import QtCore
 class AvailableSamplesModel(QtCore.QAbstractListModel):
 
     def __init__(self, *args, **kwargs):
+        """Constructor.
+        """
 
         super(AvailableSamplesModel, self).__init__(*args, **kwargs)
 
@@ -14,6 +16,8 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
         self._samples_default = []
 
     def clear(self):
+        """Clear the model.
+        """
 
         self._samples = []
         self._samples_default = []
@@ -56,7 +60,10 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEnabled
 
     def remove_items(self, items):
-        """
+        """Remove samples from the model.
+
+        Args:
+            items (list of str): the sample to remove
         """
 
         indexes = []
@@ -84,20 +91,49 @@ class AvailableSamplesModel(QtCore.QAbstractListModel):
 
     def rowCount(self, parent=None):
         """Returns the number of samples.
+
+        Return:
+            int: the number of samples
         """
 
         return len(self._samples)
 
     @property
     def samples(self):
+        """Return the samples.
+
+        Return:
+            list of str: the samples
+        """
 
         return self._samples
 
     @samples.setter
     def samples(self, samples):
+        """Set the samples.
+
+        Args:
+            samples (list of str): the samples
+        """
 
         self._samples = sorted(samples)
 
         self._samples_default = copy.copy(samples)
 
         self.layoutChanged.emit()
+
+    def add_item(self, item):
+        """Add a sample to the model.
+
+        Args:
+            item (str): the sample
+        """
+
+        if item in self._samples:
+            return
+
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+
+        self._samples.append(item)
+
+        self.endInsertRows()
