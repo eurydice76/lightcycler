@@ -157,14 +157,16 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
 
         self._n_values_tableview.setModel(NValuesDataModel(dynamic_matrix_model.get_n_values(selected_zones), self))
 
-    def on_build_dynamic_matrices(self, rawdata):
+    def on_build_dynamic_matrices(self, rawdata_model):
         """Build the dynamic matrices for each gene from the rawdata dataframe.
 
         Args:
-            rawdata (pandas.DataFrame): the rawdata
+            rawdata_model (lightcycler.kernel.models.rawdata_model.RawDataModel): the rawdata model
         """
 
         self._dynamic_matrices.clear()
+
+        rawdata = rawdata_model.rawdata
 
         # Fetch the list of genes from the rawdata
         genes = sorted(list(collections.OrderedDict.fromkeys(rawdata['Gene']))) if 'Gene' in rawdata.columns else []

@@ -23,7 +23,7 @@ class RawDataError(Exception):
 
 class RawDataModel(QtCore.QAbstractTableModel):
 
-    data_updated = QtCore.pyqtSignal(pd.DataFrame)
+    data_updated = QtCore.pyqtSignal(object)
 
     def __init__(self, *args, **kwargs):
         """Constructor.
@@ -48,7 +48,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
     def flags(self, index):
         """
@@ -97,7 +97,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
                 self._rawdata.iloc[row, col] = value
 
         # Emit a signal that the raw data has been updated
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
         return True
 
@@ -172,7 +172,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
         self._rawdata = pd.concat([self._rawdata, data_frame])
 
         # Emit a signal that the raw data has been updated
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
     def read_csv_file(self, csv_file):
         """Read a csv data file.
@@ -232,7 +232,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
         self._rawdata = pd.concat([self._rawdata, data_frame])
 
         # Emit a signal that the raw data has been updated
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
     _readers = {'.pdf': read_pdf_file, '.csv': read_csv_file, '.txt': read_csv_file}
 
@@ -267,7 +267,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
     def columnCount(self, parent=None):
         """Return the number of columns of the model for a given parent.
@@ -370,7 +370,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
         self._rawdata_default = copy.copy(self._rawdata)
         self.layoutChanged.emit()
 
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
     def on_reset(self):
 
@@ -378,7 +378,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-        self.data_updated.emit(self._rawdata)
+        self.data_updated.emit(self)
 
     def on_change_value(self, sample, gene, index, new_value):
         """Change a value of the raw data.

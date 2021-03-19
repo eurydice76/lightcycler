@@ -321,19 +321,39 @@ class GroupsWidget(QtWidgets.QWidget):
         student_test_df = self._student_test_per_gene[gene][zone]
         self._student_test_tableview.setModel(PValuesDataModel(student_test_df, self))
 
-    def on_set_available_samples(self, samples):
-        """Update the available sample listview with a new set of samples.
+    def on_update_samples_and_groups(self, rawdata_model):
+        """Update the available sample listview and the group contents listview with a change in rawdata.
 
         Args:
-            samples (list of str): the new samples
+            rawdata_model (lightcycler.kernel.models.rawdata_model.RawDataModel): the raw data model
         """
 
+        groups_model = self._groups_listview.model()
+
+        groups_contents = [model.items for _, model, _ in groups_model.groups]
+
+        # Update the available samples listview by removing from the samples the ones that are present in a group
+        filtered_samples = []
+        for s in rawdata_model.samples:
+            for gc in groups_contents:
+                if s in gc:
+                    break
+            else:
+                filtered_samples.append(s)
+
         available_samples_model = AvailableSamplesModel(self)
-        available_samples_model.samples = samples
-
+        available_samples_model.samples = filtered_samples
         self._available_samples_listview.setModel(available_samples_model)
-
         self._samples_per_group_listview.set_source_model(available_samples_model)
+
+        # Update the group contents listview by removing from the group contents of
+        # each group the samples which are not present in the input samples list
+        for _, model, _ in groups_model.groups:
+            to_be_deleted = []
+            for s in model.items:
+                if s not in rawdata_model.samples:
+                    to_be_deleted.append(s)
+            model.remove_items(to_be_deleted)
 
     def on_sort_groups(self):
         """Event handler which sort the groups in alphabetical order.

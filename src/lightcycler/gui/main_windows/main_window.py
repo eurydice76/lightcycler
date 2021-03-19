@@ -41,8 +41,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     reset_data = QtCore.pyqtSignal()
 
-    set_available_samples = QtCore.pyqtSignal(list)
-
     set_available_genes = QtCore.pyqtSignal(list)
 
     def __init__(self, parent=None):
@@ -64,7 +62,7 @@ class MainWindow(QtWidgets.QMainWindow):
         rawdata_model.data_updated.connect(self._dynamic_matrix_widget.on_build_dynamic_matrices)
 
         # Fill up the available samples
-        self.set_available_samples.connect(self._groups_widget.on_set_available_samples)
+        rawdata_model.data_updated.connect(self._groups_widget.on_update_samples_and_groups)
 
         groups_model = self._groups_widget.model()
         self._dynamic_matrix_widget.dynamic_matrices_computed.connect(groups_model.on_set_dynamic_matrices)
@@ -258,9 +256,6 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.error('Invalid excel file: missing "Raw data" and/or "Groups" sheets')
             return
 
-        # In case of an import clear the data before.
-        self.clear_data.emit()
-
         logging.info('Importing {} file. Please wait ...'.format(excel_file))
 
         rawdata = pd.read_excel(excel_file, sheet_name='Raw data')
@@ -324,8 +319,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if rawdata_model.rowCount() == 0:
             return
-
-        self.set_available_samples.emit(rawdata_model.samples)
 
         self.set_available_genes.emit(rawdata_model.genes)
 
