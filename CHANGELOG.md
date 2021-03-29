@@ -1,3 +1,8 @@
+version 0.0.17
+--------------
+* ADDED   comments
+* REMOVED unused files
+
 version 0.0.16
 --------------
 * UPDATED refactored the Genes section
