@@ -21,7 +21,7 @@ class InvalidViewError(Exception):
 
 class DynamicMatrixModel(QtCore.QAbstractTableModel):
 
-    zones = [('A', 'B', 'C', 'D', 'E'), ('A', 'B', 'C', 'D'), ('A', 'B'), ('C', 'D'), ('E',), ('Z',)]
+    zones = [('A', 'B', 'C', 'D', 'E'), ('A', 'B', 'C', 'D'), ('A', 'B'), ('C', 'D'), ('E',), ('P',), ('Z',)]
 
     def __init__(self, *args, **kwargs):
         """Constructor.
@@ -189,6 +189,38 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         averages = averages.round(3)
 
         return averages
+
+    def get_diff(self, zones):
+        """Getter for the difference of the dynamic matrix.
+
+        Args:
+        Returns:
+            pandas.DataFrame: the means
+        """
+
+        filtered_zones = []
+        for zone in zones:
+            if zone not in self._dynamic_matrix.index:
+                continue
+            filtered_zones.append(zone)
+
+        if not filtered_zones:
+            return pd.DataFrame()
+
+        samples = self._dynamic_matrix.columns
+
+        diff = pd.DataFrame(np.nan, index=filtered_zones, columns=samples)
+
+        for z in filtered_zones:
+            for s in samples:
+                if self._dynamic_matrix.loc[z, s]:
+                    diff.loc[z, s] = max(self._dynamic_matrix.loc[z, s]) - min(self._dynamic_matrix.loc[z, s])
+                else:
+                    diff.loc[z, s] = np.nan
+
+        diff = diff.round(3)
+
+        return diff
 
     def get_n_values(self, zones):
         """Return the matrix which stores the number of samples per group.

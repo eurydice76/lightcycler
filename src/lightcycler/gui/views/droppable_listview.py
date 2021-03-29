@@ -5,10 +5,8 @@ class DroppableListView(QtWidgets.QListView):
     """This class implements an interface for listviews onto which data can be dropped in.
     """
 
-    def __init__(self, source_model, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(DroppableListView, self).__init__(*args, **kwargs)
-
-        self._source_model = source_model
 
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
@@ -32,7 +30,8 @@ class DroppableListView(QtWidgets.QListView):
         """Event triggered when the dragged item is dropped into this widget.
         """
 
-        if self._source_model is None:
+        source_model = event.source().model()
+        if source_model is None:
             return
 
         target_model = self.model()
@@ -44,7 +43,7 @@ class DroppableListView(QtWidgets.QListView):
         dragged_data_model.dropMimeData(event.mimeData(), QtCore.Qt.CopyAction, 0, 0, QtCore.QModelIndex())
         dragged_items = [dragged_data_model.item(i, 0).text() for i in range(dragged_data_model.rowCount())]
 
-        self._source_model.remove_items(dragged_items)
+        source_model.remove_items(dragged_items)
 
         # # Drop only those items which are not present in this widget
         current_items = [target_model.data(target_model.index(i), QtCore.Qt.DisplayRole) for i in range(target_model.rowCount())]
@@ -76,9 +75,3 @@ class DroppableListView(QtWidgets.QListView):
 
         else:
             super(DroppableListView, self).keyPressEvent(event)
-
-    def set_source_model(self, source_model):
-        """Bind a samples model to the widget
-        """
-
-        self._source_model = source_model

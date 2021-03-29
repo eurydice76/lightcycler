@@ -377,6 +377,17 @@ class GroupsModel(QtCore.QAbstractListModel):
 
         self.layoutChanged.emit()
 
+    def get_group_control_contents(self):
+
+        if self._group_control is None:
+            return []
+
+        for group, model, _ in self._groups:
+            if group == self._group_control:
+                return model.items
+        else:
+            return []
+
     @property
     def group_names(self):
         """Return the group names.

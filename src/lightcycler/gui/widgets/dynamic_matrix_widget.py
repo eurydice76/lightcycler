@@ -6,6 +6,7 @@ import pandas as pd
 from PyQt5 import QtCore, QtWidgets
 
 from lightcycler.gui.views.copy_pastable_tableview import CopyPastableTableView
+from lightcycler.kernel.models.diff_data_model import DiffDataModel
 from lightcycler.kernel.models.dynamic_matrix_model import DynamicMatrixModel
 from lightcycler.kernel.models.n_values_data_model import NValuesDataModel
 from lightcycler.kernel.models.pandas_data_model import PandasDataModel
@@ -82,6 +83,9 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
         self._n_values_tableview = CopyPastableTableView(',')
         self._tabs.addTab(self._n_values_tableview, 'N')
 
+        self._diff_tableview = CopyPastableTableView(',')
+        self._tabs.addTab(self._diff_tableview, 'Difference')
+
         self._selected_gene_label = QtWidgets.QLabel('Gene')
         self._selected_gene_combobox = QtWidgets.QComboBox()
 
@@ -130,6 +134,7 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
             self._averages_tableview.setModel(None)
             self._stds_tableview.setModel(None)
             self._n_values_tableview.setModel(None)
+            self._diff_tableview.setModel(None)
 
         else:
             # Update the dynamic matrix model with the dynamic matrix corresponding to the selected gene
@@ -142,6 +147,7 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
             self._averages_tableview.setModel(PandasDataModel(dynamic_matrix_model.get_averages(selected_zones), self))
             self._stds_tableview.setModel(StdsDataModel(dynamic_matrix_model.get_stds(selected_zones), self))
             self._n_values_tableview.setModel(NValuesDataModel(dynamic_matrix_model.get_n_values(selected_zones), self))
+            self._diff_tableview.setModel(DiffDataModel(dynamic_matrix_model.get_diff(selected_zones), self))
 
     def on_select_zones(self):
         """Updates the averages, stds and values tables with the selected zones.
@@ -156,6 +162,8 @@ class DynamicMatrixWidget(QtWidgets.QWidget):
         self._stds_tableview.setModel(StdsDataModel(dynamic_matrix_model.get_stds(selected_zones), self))
 
         self._n_values_tableview.setModel(NValuesDataModel(dynamic_matrix_model.get_n_values(selected_zones), self))
+
+        self._diff_tableview.setModel(DiffDataModel(dynamic_matrix_model.get_diff(selected_zones), self))
 
     def on_build_dynamic_matrices(self, rawdata_model):
         """Build the dynamic matrices for each gene from the rawdata dataframe.

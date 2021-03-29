@@ -85,7 +85,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
                 self._rawdata.iloc[row, col] = value
 
         elif col == 5:
-            if value in ['A', 'B', 'C', 'D', 'E', 'Z']:
+            if value in ['A', 'B', 'C', 'D', 'E', 'P', 'Z']:
                 self._rawdata.iloc[row, col] = value
 
         elif col == 6:
@@ -152,7 +152,9 @@ class RawDataModel(QtCore.QAbstractTableModel):
         zones = [v[1] for v in names_and_zones]
         # The F zone are the same that E zone
         zones = [z if z != 'F' else 'E' for z in zones]
+        # If zone is an empty string set it to Z
         zones = [z if z else 'Z' for z in zones]
+        zones = ['P' if name == 'RT' else zones[i] for i, name in enumerate(names)]
 
         data_frame['Name'] = names
 
@@ -181,7 +183,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
             csv_file: the csv file
         """
 
-        filename, ext = os.path.splitext(csv_file)
+        filename, _ = os.path.splitext(csv_file)
 
         basename = os.path.basename(filename)
 
@@ -212,7 +214,7 @@ class RawDataModel(QtCore.QAbstractTableModel):
             line['Gene'] = [gene]
             line['RT'] = [rt]
             line['Pos'] = [row[2]]
-            line['Name'] = [' '.join(row[3].split()[1:]).strip()]
+            line['Name'] = [row[3].strip().split(' ')[-1]]
             match = re.findall(r'(\d+)([ABCDEF])', line['Name'][0])
             if match:
                 line['Name'] = [match[0][0]]
@@ -438,6 +440,9 @@ class RawDataModel(QtCore.QAbstractTableModel):
             list of str: the sample names
         """
 
+        if 'Gene' not in self._rawdata.columns:
+            return []
+
         genes = list(collections.OrderedDict.fromkeys(self._rawdata['Gene']))
 
         return genes
@@ -449,6 +454,9 @@ class RawDataModel(QtCore.QAbstractTableModel):
         Returns:
             list of str: the sample names
         """
+
+        if 'Name' not in self._rawdata.columns:
+            return []
 
         samples = list(collections.OrderedDict.fromkeys(self._rawdata['Name']))
 

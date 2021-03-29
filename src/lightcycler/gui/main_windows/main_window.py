@@ -31,10 +31,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     clear_data = QtCore.pyqtSignal()
 
-    load_genes = QtCore.pyqtSignal(list, pd.DataFrame)
-
     # Signal emitted when Groups sheet of an imported workbook is read.
     groups_loaded = QtCore.pyqtSignal(list, pd.DataFrame)
+
+    # Signal emitted when Genes sheet of an imported workbook is read.
+    genes_loaded = QtCore.pyqtSignal(list, pd.DataFrame)
 
     # Signal emitted when Group control sheet of an imported workbook is read.
     group_control_loaded = QtCore.pyqtSignal(str)
@@ -69,15 +70,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.clear_data.connect(rawdata_model.on_clear)
         self.clear_data.connect(self._groups_widget.on_clear)
+        self.clear_data.connect(self._genes_widget.on_clear)
 
         self.reset_data.connect(rawdata_model.on_reset)
 
         self.groups_loaded.connect(self._groups_widget.on_load_groups)
         self.group_control_loaded.connect(self._groups_widget.on_set_group_control)
 
-#        self.load_genes.connect(self._genes_widget.on_load_genes)
+        genes_model = self._genes_widget.model()
+        self._dynamic_matrix_widget.dynamic_matrices_computed.connect(genes_model.on_set_dynamic_matrices)
+        self.genes_loaded.connect(self._genes_widget.on_load_genes)
 
-#        self.set_available_genes.connect(self._genes_widget.on_set_available_genes)
+        self.set_available_genes.connect(self._genes_widget.on_set_available_genes)
 
     def _build_layout(self):
         """Build the layout.
@@ -232,7 +236,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._rawdata_widget.export(workbook)
         self._dynamic_matrix_widget.export(workbook)
         self._groups_widget.export(workbook)
-        # self._genes_widget.export(workbook)
+        self._genes_widget.export(workbook)
 
         try:
             workbook.save(filename)
@@ -265,15 +269,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         groups = pd.read_excel(excel_file, sheet_name='Groups')
         groups = groups.reindex(sorted(groups.columns), axis=1)
+        groups = groups.astype(str)
         self.groups_loaded.emit(rawdata_model.samples, groups)
 
         group_control = pd.read_excel(excel_file, sheet_name='Group control', header=None)
+        group_control = group_control.astype(str)
         if not group_control.empty:
             self.group_control_loaded.emit(group_control.loc[0, 0])
 
-        # genes_per_group = pd.read_excel(excel_file, sheet_name='genes')
-
-        # self.load_genes.emit(rawdata_model.genes, genes_per_group)
+        genes_per_group = pd.read_excel(excel_file, sheet_name='Genes')
+        self.genes_loaded.emit(rawdata_model.genes, genes_per_group)
 
         logging.info('... successfully imported {} file'.format(excel_file))
 

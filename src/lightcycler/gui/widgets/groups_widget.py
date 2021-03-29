@@ -90,7 +90,7 @@ class GroupsWidget(QtWidgets.QWidget):
         """Build the widgets of the widget.
         """
 
-        self._available_samples_listview = DroppableListView(None, self)
+        self._available_samples_listview = DroppableListView(self)
         self._available_samples_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._available_samples_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
         self._available_samples_listview.setDragEnabled(True)
@@ -100,7 +100,7 @@ class GroupsWidget(QtWidgets.QWidget):
         self._groups_listview.setSelectionMode(QtWidgets.QListView.SingleSelection)
         self._groups_listview.setModel(GroupsModel(self))
 
-        self._samples_per_group_listview = DroppableListView(self._available_samples_listview.model(), self)
+        self._samples_per_group_listview = DroppableListView(self)
         self._samples_per_group_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._samples_per_group_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
         self._samples_per_group_listview.setDragEnabled(True)
@@ -224,8 +224,6 @@ class GroupsWidget(QtWidgets.QWidget):
 
         available_samples_model.remove_items(filtered_samples)
 
-        self._samples_per_group_listview.set_source_model(available_samples_model)
-
     def on_set_group_control(self, group_control):
         """Sets the group control.
 
@@ -299,8 +297,6 @@ class GroupsWidget(QtWidgets.QWidget):
 
         self._samples_per_group_listview.setModel(samples_per_group_model)
 
-        self._available_samples_listview.set_source_model(samples_per_group_model)
-
     def on_select_zone(self, zone):
         """Event handler which updates the student table view for the selected zone.
 
@@ -344,7 +340,6 @@ class GroupsWidget(QtWidgets.QWidget):
         available_samples_model = AvailableSamplesModel(self)
         available_samples_model.samples = filtered_samples
         self._available_samples_listview.setModel(available_samples_model)
-        self._samples_per_group_listview.set_source_model(available_samples_model)
 
         # Update the group contents listview by removing from the group contents of
         # each group the samples which are not present in the input samples list

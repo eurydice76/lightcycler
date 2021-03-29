@@ -21,7 +21,7 @@ class AvailableGenesModel(QtCore.QAbstractListModel):
 
         self._genes = []
 
-        self._genes_default()
+        self._genes_default = []
 
         self.layoutChanged.emit()
 
@@ -122,3 +122,19 @@ class AvailableGenesModel(QtCore.QAbstractListModel):
         self._genes = copy.copy(self._genes_default)
 
         self.layoutChanged.emit()
+
+    def add_item(self, item):
+        """Add a sample to the model.
+
+        Args:
+            item (str): the sample
+        """
+
+        if item in self._genes:
+            return
+
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+
+        self._genes.append(item)
+
+        self.endInsertRows()

@@ -63,11 +63,12 @@ class DroppableModel(QtCore.QAbstractListModel):
                 continue
 
         indexes.reverse()
-
         for idx in indexes:
             self.beginRemoveRows(QtCore.QModelIndex(), idx, idx)
             del self._items[idx]
             self.endRemoveRows()
+
+        self.layoutChanged.emit()
 
     def clear(self):
         """Reset the model.

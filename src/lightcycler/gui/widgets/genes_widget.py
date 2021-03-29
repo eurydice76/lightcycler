@@ -2,12 +2,14 @@ import logging
 
 from PyQt5 import QtCore, QtWidgets
 
+from lightcycler.gui.dialogs.ct_power_dialog import CTPowerDialog
 from lightcycler.gui.views.droppable_listview import DroppableListView
-from lightcycler.gui.widgets.ct_matrix_widget import CTMatrixWidget
+from lightcycler.gui.widgets.gene_dataframe_widget import GeneDataFrameWidget
 from lightcycler.gui.widgets.rq_matrix_widget import RQMatrixWidget
 from lightcycler.kernel.models.available_genes_model import AvailableGenesModel
 from lightcycler.kernel.models.droppable_model import DroppableModel
 from lightcycler.kernel.models.genes_model import GenesModel
+from lightcycler.kernel.models.pandas_data_model import PandasDataModel
 
 
 class GenesWidget(QtWidgets.QWidget):
@@ -26,7 +28,7 @@ class GenesWidget(QtWidgets.QWidget):
         """Build the events related with the widget.
         """
 
-        self._reset_genes_pushbutton.clicked.connect(self.on_clear)
+        self._reset_genes_pushbutton.clicked.connect(self.on_reset)
         self._compute_rq_matrix_pushbutton.clicked.connect(self.on_compute_rq_matrix)
 
     def _build_layout(self):
@@ -43,7 +45,7 @@ class GenesWidget(QtWidgets.QWidget):
         hlayout.addLayout(vlayout)
 
         vlayout = QtWidgets.QVBoxLayout()
-        vlayout.addWidget(QtWidgets.QLabel('Control genes'))
+        vlayout.addWidget(QtWidgets.QLabel('Reference genes'))
         vlayout.addWidget(self._reference_genes_listview)
         hlayout.addLayout(vlayout)
 
@@ -58,8 +60,6 @@ class GenesWidget(QtWidgets.QWidget):
 
         rq_matrix_layout = QtWidgets.QHBoxLayout()
 
-        rq_matrix_layout.addWidget(self._ct_power_label)
-        rq_matrix_layout.addWidget(self._ct_power_spinbox)
         rq_matrix_layout.addWidget(self._compute_rq_matrix_pushbutton, stretch=4)
 
         main_layout.addLayout(rq_matrix_layout)
@@ -72,43 +72,42 @@ class GenesWidget(QtWidgets.QWidget):
         """Build the widgets of the widget.
         """
 
-        self._available_genes_listview = QtWidgets.QListView()
+        self._available_genes_listview = DroppableListView(self)
         self._available_genes_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._available_genes_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
         self._available_genes_listview.setDragEnabled(True)
 
-        self._reference_genes_listview = DroppableListView(None, self)
+        self._reference_genes_listview = DroppableListView(self)
         self._reference_genes_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._reference_genes_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
+        self._reference_genes_listview.setDragEnabled(True)
         reference_genes_model = DroppableModel(self)
         self._reference_genes_listview.setModel(reference_genes_model)
 
-        self._interest_genes_listview = DroppableListView(None, self)
+        self._interest_genes_listview = DroppableListView(self)
         self._interest_genes_listview.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self._interest_genes_listview.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
+        self._interest_genes_listview.setDragEnabled(True)
         interest_genes_model = DroppableModel(self)
         self._interest_genes_listview.setModel(interest_genes_model)
 
         self._reset_genes_pushbutton = QtWidgets.QPushButton('Reset')
 
-        self._ct_power_label = QtWidgets.QLabel('CT power')
-
-        self._ct_power_spinbox = QtWidgets.QDoubleSpinBox()
-        self._ct_power_spinbox.setMinimum(0.0)
-        self._ct_power_spinbox.setMaximum(2.0)
-        self._ct_power_spinbox.setValue(2.0)
-        self._ct_power_spinbox.setDecimals(4)
-        self._ct_power_spinbox.setSingleStep(0.0001)
-
         self._compute_rq_matrix_pushbutton = QtWidgets.QPushButton('Compute RQ matrix')
 
         self._tabs = QtWidgets.QTabWidget()
 
-        self._ct_matrix_widget = CTMatrixWidget(self)
-        self._rq_matrix_widget = RQMatrixWidget(self)
+        self._delta_ct_matrices_widget = GeneDataFrameWidget(self)
+        self._pow_delta_ct_matrices_widget = GeneDataFrameWidget(self)
+        self._geom_means_widget = QtWidgets.QTableView()
+        self._ratio_matrices_widget = GeneDataFrameWidget(self)
+        self._ratio_matrices_per_group_widget = GeneDataFrameWidget(self)
 
-        self._tabs.addTab(self._ct_matrix_widget, 'CT matrix')
-        self._tabs.addTab(self._rq_matrix_widget, 'RQ matrix')
+        self._tabs.addTab(self._delta_ct_matrices_widget, 'Delta CT matrix')
+        self._tabs.addTab(self._pow_delta_ct_matrices_widget, 'Pow Delta CT matrix')
+        self._tabs.addTab(self._geom_means_widget, 'Geom. means')
+        self._tabs.addTab(self._ratio_matrices_widget, 'Ratio matrix')
+        self._tabs.addTab(self._ratio_matrices_per_group_widget, 'Ratio per group')
 
     def _init_ui(self):
         """Initialize the ui.
@@ -118,13 +117,15 @@ class GenesWidget(QtWidgets.QWidget):
         self._build_layout()
         self._build_events()
 
+        rawdata_model = self._main_window.rawdata_widget.model()
         groups_model = self._main_window.groups_widget.model()
-        ct_matrix_model = self._ct_matrix_widget.model()
-        rq_matrix_model = self._rq_matrix_widget.model()
         reference_genes_model = self._reference_genes_listview.model()
         interest_genes_model = self._interest_genes_listview.model()
 
-        self._genes_model = GenesModel(groups_model, ct_matrix_model, rq_matrix_model, reference_genes_model, interest_genes_model)
+        self._genes_model = GenesModel(rawdata_model,
+                                       groups_model,
+                                       reference_genes_model,
+                                       interest_genes_model)
 
     def model(self):
         """Returns the underlying composite model.
@@ -139,7 +140,19 @@ class GenesWidget(QtWidgets.QWidget):
         """Compute the RQ matrix.
         """
 
-        self._genes_model.compute_rq_matrix(self._ct_power_spinbox.value())
+        rawdata_model = self._main_window.rawdata_widget.model()
+        genes = rawdata_model.genes
+
+        dialog = CTPowerDialog(genes)
+
+        if dialog.exec_():
+            self._genes_model.set_ct_power_per_gene(dialog.ct_powers)
+            self._genes_model.compute_rq_matrix()
+            self._delta_ct_matrices_widget.set_matrices(self._genes_model.delta_ct_matrices)
+            self._pow_delta_ct_matrices_widget.set_matrices(self._genes_model.pow_delta_ct_matrices)
+            self._geom_means_widget.setModel(PandasDataModel(self._genes_model.geom_means.round(3), self))
+            self._ratio_matrices_widget.set_matrices(self._genes_model.ratio_matrices)
+            self._ratio_matrices_per_group_widget.set_matrices(self._genes_model.ratio_matrices_per_group)
 
     def export(self, workbook):
         """Event handler which export the raw data to an excel spreadsheet.
@@ -151,6 +164,22 @@ class GenesWidget(QtWidgets.QWidget):
         self._genes_model.export(workbook)
 
     def on_clear(self):
+        """Event handler which resets all the groups defined so far.
+        """
+
+        available_genes_model = self._available_genes_listview.model()
+        if available_genes_model is not None:
+            available_genes_model.clear()
+
+        reference_genes_model = self._reference_genes_listview.model()
+        if reference_genes_model is not None:
+            reference_genes_model.clear()
+
+        interest_genes_model = self._interest_genes_listview.model()
+        if interest_genes_model is not None:
+            interest_genes_model.clear()
+
+    def on_reset(self):
         """Event handler which resets all the groups defined so far.
         """
 
@@ -194,9 +223,6 @@ class GenesWidget(QtWidgets.QWidget):
 
         available_genes_model.remove_items(filtered_genes)
 
-        self._reference_genes_listview.set_source_model(available_genes_model)
-        self._interest_genes_listview.set_source_model(available_genes_model)
-
     def on_set_available_genes(self, genes):
         """
         """
@@ -205,6 +231,3 @@ class GenesWidget(QtWidgets.QWidget):
         available_genes_model.genes = genes
 
         self._available_genes_listview.setModel(available_genes_model)
-
-        self._reference_genes_listview.set_source_model(available_genes_model)
-        self._interest_genes_listview.set_source_model(available_genes_model)
