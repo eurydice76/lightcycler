@@ -21,4 +21,4 @@ __repo__ = "https://gitlab.com/irba/lightcycler"
 
 __license__ = "GPL 3"
 
-__version__ = "0.0.15"
+__version__ = "0.0.16"

@@ -1,3 +1,11 @@
+version 0.0.16
+--------------
+* UPDATED refactored the Genes section
+* ADDED   a tab for the difference in dynamic matrix
+* ADDED   the gene can be dropped back to the available genes listview
+* ADDED   the sample and group contents listview are now reactive to rawdata removal
+* ADDED   introduced the concept of zone in lightcycler
+
 version 0.0.15
 --------------
 * ADDED   the ct power can be modified by the user
