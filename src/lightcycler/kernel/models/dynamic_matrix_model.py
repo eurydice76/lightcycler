@@ -32,6 +32,8 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         self._dynamic_matrix = pd.DataFrame()
 
     def clear(self):
+        """Clear the dynamic matrix.
+        """
 
         self._dynamic_matrix = pd.DataFrame()
 
@@ -162,11 +164,11 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
                 worksheet.cell(row=comp, column=j+2).value = n_values.iloc[i, j]
 
     def get_averages(self, zones):
-        """Getter for the means of the dynamic matrix.
+        """Getter for the averages of each entry of the dynamic matrix for each selected zone.
 
         Args:
         Returns:
-            pandas.DataFrame: the means
+            pandas.DataFrame: the averages
         """
 
         filtered_zones = []
@@ -191,11 +193,11 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         return averages
 
     def get_diff(self, zones):
-        """Getter for the difference of the dynamic matrix.
+        """Getter for the difference between the max and the min of each dynamic matrix entry for each selected zone.
 
         Args:
         Returns:
-            pandas.DataFrame: the means
+            pandas.DataFrame: the difference matrix
         """
 
         filtered_zones = []
@@ -223,7 +225,10 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         return diff
 
     def get_n_values(self, zones):
-        """Return the matrix which stores the number of samples per group.
+        """Getter for the matrix which stores the number of samples of each entry of the dynamic matrix for each selected zone.
+
+        Args:
+            zones (list of str): the zones
 
         Returns:
             pandas.DataFrame: the matrix.
@@ -246,13 +251,13 @@ class DynamicMatrixModel(QtCore.QAbstractTableModel):
         return n_values
 
     def get_stds(self, zones):
-        """Return the standard deviation matrix for a set of zones.
+        """Getter for the standard deviation matrix of each entry of the dynamic matrix for each selected zone.
 
         Args:
             zones (list of str): the zones
 
         Returns:
-            pandas.DataFrame: the matrix of standard deviations.
+            pandas.DataFrame: the matrix of standard deviations
         """
 
         # Keep only the zones which are present as an index of the current dynamic matrix

@@ -210,8 +210,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return self._dynamic_matrix_widget
 
-    def on_clear_data(self):
+    @ property
+    def groups_widget(self):
+        """Returns the groups widget.
+
+        Returns:
+            lightcycler.gui.widgets.groups_widget.GroupsWidget: the widget
         """
+
+        return self._groups_widget
+
+    def on_clear_data(self):
+        """Clear the data.
         """
 
         self.clear_data.emit()
@@ -283,7 +293,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info('... successfully imported {} file'.format(excel_file))
 
     def on_open_lightcycler_files(self):
-        """Event handler which loads several lightcycler files.
+        """Opens and loads lightcycler files.
         """
 
         # Pop up a file browser for selecting the workbooks
@@ -328,7 +338,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_available_genes.emit(rawdata_model.genes)
 
     def on_quit_application(self):
-        """Event handler which quits the application.
+        """Quit the application.
         """
 
         choice = QtWidgets.QMessageBox.question(self, 'Quit', "Do you really want to quit?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
@@ -340,16 +350,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.reset_data.emit()
-
-    @ property
-    def groups_widget(self):
-        """Returns the groups widget.
-
-        Returns:
-            lightcycler.gui.widgets.groups_widget.GroupsWidget: the widget
-        """
-
-        return self._groups_widget
 
     @ property
     def rawdata_widget(self):

@@ -5,7 +5,6 @@ from PyQt5 import QtCore, QtWidgets
 from lightcycler.gui.dialogs.ct_power_dialog import CTPowerDialog
 from lightcycler.gui.views.droppable_listview import DroppableListView
 from lightcycler.gui.widgets.gene_dataframe_widget import GeneDataFrameWidget
-from lightcycler.gui.widgets.rq_matrix_widget import RQMatrixWidget
 from lightcycler.kernel.models.available_genes_model import AvailableGenesModel
 from lightcycler.kernel.models.droppable_model import DroppableModel
 from lightcycler.kernel.models.genes_model import GenesModel
