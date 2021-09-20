@@ -1,0 +1,8 @@
+# lightcycler
+
+lightcycler is a PyQt-based GUI application to perform statistical analysis for 
+RT-PCR data collected using lightcycler software.
+
+## Installation
+
+pip install lightcycler
