@@ -1,3 +1,7 @@
+version 0.0.18
+--------------
+* UPDATED changed file hierarchy
+
 version 0.0.17
 --------------
 * ADDED   comments
